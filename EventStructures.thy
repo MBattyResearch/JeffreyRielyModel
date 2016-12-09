@@ -111,10 +111,17 @@ definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a event_s
 
 definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
 "ae_justifies es1 es2 \<equiv> 
-  (\<forall>c.(justifies_config es1 c) \<exists>d.((justifies_config c d) \<and> (justifies_config d es2)))"
+  (\<forall>c. (justifies_config es1 c) \<exists>d.(justifies_config c d \<and> justifies_config d es2))"
+
+value "{}"
+value "\<lambda>(x,y).False"
 
 definition empty_ES :: "int event_structure_data" where
-"empty_ES \<equiv> \<lparr> {}, \<lambda>x.\<lambda>y.False, \<lambda>x.\<lambda>y.False, \<lambda>x. Label N '''' 0 \<rparr>"
+"empty_ES \<equiv> 
+  \<lparr> event_set = {}, 
+  partial_order = \<lambda>(x,y).False,
+  primitive_conflict = \<lambda>(x,y).False, 
+  label_function = \<lambda>x.(Label N '''' 0) \<rparr>"
 
 (*well justification when \<emptyset> justifies C*)
 definition well_justified :: "'a event_structure_data \<Rightarrow> bool" where
