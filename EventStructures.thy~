@@ -18,7 +18,7 @@ class event_structure =
   (*primitive conflict constraint*)
   assumes conflict_minimal: "((d '\<bowtie>' e) \<and> (b \<le> d) \<and> (b '\<bowtie>' c) \<and> (c \<le> e)) \<Longrightarrow> (d = b \<and> c = e)"
 
-datatype mem_action = W | R | I | N
+datatype mem_action = W | R | I
 (*record label =
   action :: "mem_action"
   location :: string
@@ -109,15 +109,7 @@ definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a event_s
 "justifies_config es1 es2 \<equiv>
  (\<forall>x\<in>(event_set es2). \<exists>y\<in>(event_set es1). (justifies_event (label_function es1 y) (label_function es2 x)))"
 
-definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
-"ae_justifies es1 es2 \<equiv> 
-  (\<forall>c.(justifies_config es1 c) \<exists>d.((justifies_config c d) \<and> (justifies_config d es2)))"
-
-definition empty_ES :: "int event_structure_data" where
-"empty_ES \<equiv> \<lparr> {}, \<lambda>x.\<lambda>y.False, \<lambda>x.\<lambda>y.False, \<lambda>x. Label N '''' 0 \<rparr>"
-
-(*well justification when \<emptyset> justifies C*)
-definition well_justified :: "'a event_structure_data \<Rightarrow> bool" where
-"well_justified es \<equiv> ae_justifies empty_ES es"
+definition ae_justification :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
+ 
 
 end
