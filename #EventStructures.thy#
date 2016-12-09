@@ -111,8 +111,8 @@ definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a event_s
 
 definition acyclic_justification :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
 "acyclic_justification es1 es2 \<equiv> 
-  \<forall>r\<in>(event_set es2). ((label_function es2) getMemAction r = R) 
-    \<longrightarrow> (\<exists>w\<in>(event_set es1). ((label_function es1) getMemAction w = W) \<and> justifies_event w r)"
+  \<forall>r\<in>(event_set es2). (getMemAction (label_function es2 r) = R) 
+    \<longrightarrow> (\<exists>w\<in>(event_set es1). (getMemAction (label_function es1 w) = W) \<and> justifies_event w r)"
 
 definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
 "ae_justifies es1 es2 \<equiv>
