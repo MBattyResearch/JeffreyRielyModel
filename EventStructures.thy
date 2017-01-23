@@ -87,10 +87,13 @@ definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a event_s
 definition justified_config_reln :: "('a event_structure_data \<times> 'a event_structure_data) set" where
 "justified_config_reln \<equiv> { (e1, e2) . justifies_config e1 e2 }"
 
-inductive justified_trans_closure :: "('a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool) \<Rightarrow> 'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool"for justifies_config  where
-refl: "justified_trans_closure justifies_config x x "|
-step: "justifies_config x y \<Longrightarrow> justified_trans_closure justifies_config y z \<Longrightarrow> justified_trans_closure justifies_config x z " 
+inductive trans_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a  \<Rightarrow> 'a  \<Rightarrow> bool" for r where
+refl: "trans_closure r x x "|
+step: "r x y \<Longrightarrow> trans_closure r y z \<Longrightarrow> trans_closure r x z " 
 
+definition ae_justification :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
+"ae_justification es1 es2 \<equiv> 
+  \<forall>x.(trans_closure justifies_config es1 x) (\<exists>y.(trans_closure justifies_config x y) \<and> (justifies_config y es2))"
 
 definition empty_ES :: "int event_structure_data" where
 "empty_ES \<equiv> 
