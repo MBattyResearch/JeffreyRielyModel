@@ -82,17 +82,15 @@ definition down_closure :: "'a set \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarr
 
 definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
 "justifies_config es1 es2 \<equiv>
- (\<forall>x\<in>(event_set es2). \<exists>y\<in>(event_set es1). (justifies_event (label_function es1 y) (label_function es2 x)))"
+   (\<forall>x\<in>(event_set es2). \<exists>y\<in>(event_set es1). (justifies_event (label_function es1 y) (label_function es2 x)))"
 
-definition acyclic_justification :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
-"acyclic_justification es1 es2 \<equiv> 
-  \<forall>r\<in>(event_set es2). (getMemAction (label_function es2 r) = R) 
-    \<longrightarrow> (\<exists>w\<in>(event_set es1). (getMemAction (label_function es1 w) = W) 
-      \<and> justifies_event (label_function es1 w) (label_function es2 r))"
+definition justified_config_reln :: "('a event_structure_data \<times> 'a event_structure_data) set" where
+"justified_config_reln \<equiv> { (e1, e2) . justifies_config e1 e2 }"
 
-definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
-"ae_justifies es1 es2 \<equiv>
-  \<forall>c. justifies_config es1 c \<longrightarrow> (\<exists>d.(justifies_config c d \<and> justifies_config d es2))"
+inductive justified_trans_closure :: "('a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool) \<Rightarrow> 'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool"for justifies_config  where
+refl: "justified_trans_closure justifies_config x x "|
+step: "justifies_config x y \<Longrightarrow> justified_trans_closure justifies_config y z \<Longrightarrow> justified_trans_closure justifies_config x z " 
+
 
 definition empty_ES :: "int event_structure_data" where
 "empty_ES \<equiv> 
@@ -101,8 +99,5 @@ definition empty_ES :: "int event_structure_data" where
   primitive_conflict = \<lambda>x y. False,
   label_function = \<lambda>x.(Label I '''' 0) \<rparr>"
 
-(*well justification, inductive,  \<emptyset> justifies C*)
-definition well_justified :: "'a event_structure_data \<Rightarrow> bool" where
-"well_justified es \<equiv> ae_justifies empty_ES es"
 
 end

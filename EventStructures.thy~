@@ -2,28 +2,7 @@ theory EventStructures
 imports Main Enum String 
 begin
 
-class event_structure =
-  fixes event_set :: "'a::ord set"
-  fixes partial_order :: "'a \<Rightarrow> 'a \<Rightarrow> bool" (infix "''\<le>''" 50)
-  fixes conflict :: "'a \<Rightarrow> 'a \<Rightarrow> bool" (infix "''\<bowtie>''" 50)
-  fixes labelling :: "'a \<Rightarrow> label"
-
-  assumes partial_order_refl: "x \<le> x"
-  assumes partial_order_trans: "x \<le> y \<Longrightarrow> y \<le> z \<Longrightarrow> x \<le> z"
-  assumes partial_order_antisym: "x \<le> y \<Longrightarrow> y \<le> x \<Longrightarrow> x = y"  
-
-  assumes conflict_sym: "x '\<bowtie>' y \<Longrightarrow> y '\<bowtie>' x"
-  assumes conflict_trans: "x '\<bowtie>' y \<Longrightarrow> y '\<bowtie>' z \<Longrightarrow> x '\<bowtie>' z"
-  assumes conflict_over_order: "(x '\<bowtie>' y) \<and> (y \<le> z) \<Longrightarrow> x '\<bowtie>' z"
-  (*primitive conflict constraint*)
-  assumes conflict_minimal: "((d '\<bowtie>' e) \<and> (b \<le> d) \<and> (b '\<bowtie>' c) \<and> (c \<le> e)) \<Longrightarrow> (d = b \<and> c = e)"
-
-datatype mem_action = W | R | I | N
-(*record label =
-  action :: "mem_action"
-  location :: string
-  val :: int*)
-
+datatype mem_action = W | R | I 
 datatype label = Label mem_action string int
 
 (*Prime Event Structure with below restrictions*)
@@ -77,8 +56,6 @@ definition isValid :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> ('
 definition isValidES :: "'a event_structure_data \<Rightarrow> bool" where
 "isValidES es == isValid (partial_order es) (primitive_conflict es)" 
 
-value "True = False"
-
 fun justifies_event :: "label \<Rightarrow> label \<Rightarrow> bool" where
 "justifies_event (Label I l v) (Label R l2 v2) = ((l = l2) \<and> (v = 0))"|
 "justifies_event (Label W l v) (Label R l2 v2) = ((l = l2) \<and> (v = v2))"|
@@ -89,8 +66,6 @@ record 'a configuration =
   event_set :: "'a set"
   order :: "'a \<Rightarrow> 'a \<Rightarrow> bool"
   label_fn :: "'a \<Rightarrow> label"*)
-
-value "(Label W ''x'' 2)"
 
 definition conflict_free :: "'a set \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
 "conflict_free events conf \<equiv> (\<forall>e\<in>events. \<not>(\<exists>f\<in>events. conf e f))"
@@ -105,25 +80,34 @@ definition down_closure :: "'a set \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarr
 "down_closure events order labelfn \<equiv> (\<forall>e\<in>events. \<exists>f\<in>events. 
   (order f e) \<or> ((getMemAction (labelfn e)) = I))"
 
+
 definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
-"justifies_config es1 es2 \<equiv>
- (\<forall>x\<in>(event_set es2). \<exists>y\<in>(event_set es1). (justifies_event (label_function es1 y) (label_function es2 x)))"
+"justifies_config es1 es2 \<equiv> 
+  \<forall>r\<in>(event_set es2). (getMemAction (label_function es2 r) = R) 
+    \<longrightarrow> (\<exists>w\<in>(event_set es1). (getMemAction (label_function es1 w) = W) 
+      \<and> justifies_event (label_function es1 w) (label_function es2 r))"
+
+value "justifies_config^"
+
+definition trans_closure_acyc_just :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
+"acyclic_justification es1 es2 \<equiv> acyclic_justification^*"
+
+
 
 definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
-"ae_justifies es1 es2 \<equiv> 
-  (\<forall>c. (justifies_config es1 c) \<exists>d.(justifies_config c d \<and> justifies_config d es2))"
-
-value "{}"
-value "\<lambda>(x,y).False"
+"ae_justifies es1 es2 \<equiv>
+  \<forall>c. justifies_config es1 c \<longrightarrow> (\<exists>d.(justifies_config c d \<and> justifies_config d es2))"
 
 definition empty_ES :: "int event_structure_data" where
 "empty_ES \<equiv> 
-  \<lparr> event_set = {}, 
-  partial_order = \<lambda>(x,y).False,
-  primitive_conflict = \<lambda>(x,y).False, 
-  label_function = \<lambda>x.(Label N '''' 0) \<rparr>"
+  \<lparr> event_set = {0},(*contains one Initialisation event*)
+  partial_order = \<lambda>x y. False,
+  primitive_conflict = \<lambda>x y. False,
+  label_function = \<lambda>x.(Label I '''' 0) \<rparr>"
 
-(*well justification when \<emptyset> justifies C*)
+
+
+(*well justification, inductive,  \<emptyset> justifies C*)
 definition well_justified :: "'a event_structure_data \<Rightarrow> bool" where
 "well_justified es \<equiv> ae_justifies empty_ES es"
 
