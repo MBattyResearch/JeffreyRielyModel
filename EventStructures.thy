@@ -3,6 +3,7 @@ imports Main Enum String
 begin
 
 datatype mem_action = W | R | I 
+(*Memory action, location, value*)
 datatype label = Label mem_action string int
 
 (*Prime Event Structure with below restrictions*)
@@ -70,6 +71,7 @@ record 'a configuration =
 definition conflict_free :: "'a set \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
 "conflict_free events conf \<equiv> (\<forall>e\<in>events. \<not>(\<exists>f\<in>events. conf e f))"
 
+(*Helper function to get the type of memory action from an event label*)
 fun getMemAction :: "label \<Rightarrow> mem_action" where
 "getMemAction (Label I l v) = I"|
 "getMemAction (Label W l v) = W"|
@@ -80,12 +82,12 @@ definition down_closure :: "'a set \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarr
 "down_closure events order labelfn \<equiv> (\<forall>e\<in>events. \<exists>f\<in>events. 
   (order f e) \<or> ((getMemAction (labelfn e)) = I))"
 
-(*All read events re justified by an event in an event structure*)
+(*All read events in a configuration are justified by an event in an event structure*)
 definition justified :: "'a event_structure_data \<Rightarrow> bool" where
 "justified es  \<equiv>
    (\<forall>r\<in>(event_set es). \<exists>e\<in>(event_set es). (getMemAction (label_function es r) = R) \<and> (justifies_event (label_function es e) (label_function es r)))"
 
-(*for all events in event structure 1 there exists an event in event structure 2 that justifies them*)
+(*for all events in event structure 1 there exists an event in event structure 2 that justifies it*)
 definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
 "justifies_config es1 es2 \<equiv>
    (\<forall>x\<in>(event_set es2). \<exists>y\<in>(event_set es1). (justifies_event (label_function es1 y) (label_function es2 x)))"
@@ -98,9 +100,9 @@ inductive transitive_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Ri
 refl: "transitive_closure r x x "|
 step: "r x y \<Longrightarrow> transitive_closure r y z \<Longrightarrow> transitive_closure r x z " 
 
-(*event structure 1 AE justifies event structure 2*)
-definition ae_justification :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
-"ae_justification es1 es2 \<equiv> 
+(*event structure 1 AE (always eventually) justifies event structure 2*)
+definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
+"ae_justifies es1 es2 \<equiv> 
   \<forall>x.((trans_closure justifies_config) es1 x) (\<exists>y.((trans_closure justifies_config) x y) \<and> (justifies_config y es2))"
 
 definition empty_ES :: "int event_structure_data" where
@@ -109,6 +111,17 @@ definition empty_ES :: "int event_structure_data" where
   partial_order = \<lambda>x y. False,
   primitive_conflict = \<lambda>x y. False,
   label_function = \<lambda>x.(Label I '''' 0) \<rparr>"
+
+definition is_subseteq :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
+"is_subseteq es1 es2 \<equiv> (event_set es1) \<subseteq> (event_set es2) \<and> True"
+
+definition subset_AE_justifies :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
+"subset_AE_justifies es1 es2 \<equiv> (is_subseteq es1 es2) \<and> (ae_justifies es1 es2)"
+
+definition well_justified :: "'a event_structure_data \<Rightarrow> bool" where
+"well_justified es \<equiv> (justified es) \<and> True"
+
+
 
 
 end
