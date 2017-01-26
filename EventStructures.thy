@@ -105,21 +105,22 @@ definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a event_struc
 "ae_justifies es1 es2 \<equiv> 
   \<forall>x.((transitive_closure justifies_config) es1 x)\<longrightarrow> (\<exists>y.((transitive_closure justifies_config) x y) \<and> (justifies_config y es2))"
 
-definition empty_ES :: "int event_structure_data" where
+definition empty_ES :: "'a event_structure_data" where
 "empty_ES \<equiv> 
-  \<lparr> event_set = {0},(*contains one Initialisation event*)
+  \<lparr> event_set = {},
   partial_order = \<lambda>x y. False,
   primitive_conflict = \<lambda>x y. False,
   label_function = \<lambda>x.(Label I '''' 0) \<rparr>"
 
+(*True at configuration level*)
 definition is_subseteq :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
-"is_subseteq es1 es2 \<equiv> (event_set es1) \<subseteq> (event_set es2) \<and> True"
+"is_subseteq es1 es2 \<equiv> (event_set es1) \<subseteq> (event_set es2)"
 
 definition subset_AE_justifies :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
 "subset_AE_justifies es1 es2 \<equiv> (is_subseteq es1 es2) \<and> (ae_justifies es1 es2)"
 
 definition well_justified :: "'a event_structure_data \<Rightarrow> bool" where
-"well_justified es \<equiv> (justified es) \<and> True"
+"well_justified c \<equiv> (justified c) \<and> (transitive_closure subset_AE_justifies) empty_ES c"
 
 
 

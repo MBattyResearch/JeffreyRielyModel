@@ -85,7 +85,7 @@ definition down_closure :: "'a set \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarr
 (*All read events in a configuration are justified by an event in an event structure*)
 definition justified :: "'a event_structure_data \<Rightarrow> bool" where
 "justified es  \<equiv>
-   (\<forall>r\<in>(event_set es). \<exists>e\<in>(event_set es). (getMemAction (label_function es r) = R) \<and> (justifies_event (label_function es e) (label_function es r)))"
+   (\<forall>r\<in>(event_set es). (getMemAction (label_function es r) = R) \<longrightarrow> (\<exists>e\<in>(event_set es). (justifies_event (label_function es e) (label_function es r))))"
 
 (*for all events in event structure 1 there exists an event in event structure 2 that justifies it*)
 definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
@@ -103,7 +103,7 @@ step: "r x y \<Longrightarrow> transitive_closure r y z \<Longrightarrow> transi
 (*event structure 1 AE (always eventually) justifies event structure 2*)
 definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
 "ae_justifies es1 es2 \<equiv> 
-  \<forall>x.((trans_closure justifies_config) es1 x) (\<exists>y.((trans_closure justifies_config) x y) \<and> (justifies_config y es2))"
+  \<forall>x.((transitive_closure justifies_config) es1 x)\<longrightarrow> (\<exists>y.((transitive_closure justifies_config) x y) \<and> (justifies_config y es2))"
 
 definition empty_ES :: "int event_structure_data" where
 "empty_ES \<equiv> 
