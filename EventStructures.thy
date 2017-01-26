@@ -80,6 +80,10 @@ definition down_closure :: "'a set \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarr
 "down_closure events order labelfn \<equiv> (\<forall>e\<in>events. \<exists>f\<in>events. 
   (order f e) \<or> ((getMemAction (labelfn e)) = I))"
 
+definition justified :: "'a event_structure_data \<Rightarrow> bool" where
+"justified es  \<equiv>
+   (\<forall>r\<in>(event_set es). \<exists>e\<in>(event_set es). (getMemAction (label_function es r) = R) \<and> (justifies_event (label_function es e) (label_function es r)))"
+
 definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
 "justifies_config es1 es2 \<equiv>
    (\<forall>x\<in>(event_set es2). \<exists>y\<in>(event_set es1). (justifies_event (label_function es1 y) (label_function es2 x)))"
@@ -87,13 +91,15 @@ definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a event_s
 definition justified_config_reln :: "('a event_structure_data \<times> 'a event_structure_data) set" where
 "justified_config_reln \<equiv> { (e1, e2) . justifies_config e1 e2 }"
 
-inductive trans_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a  \<Rightarrow> 'a  \<Rightarrow> bool" for r where
-refl: "trans_closure r x x "|
-step: "r x y \<Longrightarrow> trans_closure r y z \<Longrightarrow> trans_closure r x z " 
+(*written own reflexive transitive closure for reasons*)
+inductive transitive_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a  \<Rightarrow> 'a  \<Rightarrow> bool" for r where
+refl: "transitive_closure r x x "|
+step: "r x y \<Longrightarrow> transitive_closure r y z \<Longrightarrow> transitive_closure r x z " 
 
 definition ae_justification :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
 "ae_justification es1 es2 \<equiv> 
-  \<forall>x.(trans_closure justifies_config es1 x) (\<exists>y.(trans_closure justifies_config x y) \<and> (justifies_config y es2))"
+  \<forall>x.((trans_closure justifies_config) es1 x) (\<exists>y.((trans_closure justifies_config) x y) \<and> (justifies_config y es2))"
+
 
 definition empty_ES :: "int event_structure_data" where
 "empty_ES \<equiv> 
