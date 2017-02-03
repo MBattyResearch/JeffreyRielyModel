@@ -122,7 +122,25 @@ definition subset_AE_justifies :: "'a event_structure_data \<Rightarrow> 'a even
 definition well_justified :: "'a event_structure_data \<Rightarrow> bool" where
 "well_justified c \<equiv> (justified c) \<and> (transitive_closure subset_AE_justifies) empty_ES c"
 
+theorem "well_justified empty_ES"
+apply (auto simp add: well_justified_def justified_def empty_ES_def)
+apply (rule refl)
+done
 
+definition ex1 :: "nat event_structure_data" where
+"ex1 \<equiv> 
+  \<lparr> event_set = {30, 31, 32, 33, 34, 35, 36, 37, 38},
+  partial_order = \<lambda>x y. (x,y) \<in>
+   {(30,31), (30,32), (30, 33)},
+  primitive_conflict = \<lambda>x y. (y,x) \<in> {(31,35), (33,34)},
+  label_function = \<lambda>x.
+    if x = 30 then 
+      Label I '''' 0
+    else
+      Label R ''x'' 0 \<rparr>"
 
-
+theorem "well_justified ex1"
+apply (auto simp add: well_justified_def justified_def empty_ES_def)
+apply (rule refl)
+done
 end
