@@ -33,7 +33,7 @@ apply(case_tac getMemAction_cases)
 oops
 
 (*Java Causality Test Case 4 Event Structure
-  Should be accepted by model*)
+  Should NOT be accepted by model*)
 definition jctc4_ES :: "nat event_structure_data" where
 "jctc4_ES \<equiv> \<lparr> 
   event_set = {0, 1, 2, 3, 4, 5, 6, 7, 8},
