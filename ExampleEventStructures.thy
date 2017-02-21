@@ -20,15 +20,21 @@ definition ex1 :: "nat event_structure_data" where
       Label R ''x'' 0 \<rparr>"
 
 
+
 theorem "well_justified ex1"
 apply(auto simp add: well_justified_def)
 apply(auto simp add: justified_def)
-apply(auto simp add: ex1_def)
 apply(auto simp add: empty_ES_def)
+apply(case_tac r)
+apply(auto simp add: "getMemAction.cases")
+apply(auto simp add: label_function_def)
+
+apply(auto simp add: ex1_def)
+
 
 
 apply(auto simp add: label_function_def)
-apply(case_tac event_structure_data_ext_Tuple_Iso)
+apply(case_tac )
 apply(case_tac getMemAction_cases)
 oops
 
