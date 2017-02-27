@@ -58,8 +58,10 @@ definition isValidES :: "'a event_structure_data \<Rightarrow> bool" where
 "isValidES es == isValid (partial_order es) (primitive_conflict es)" 
 
 fun justifies_event :: "label \<Rightarrow> label \<Rightarrow> bool" where
-"justifies_event (Label I l v) (Label R l2 v2) = ((l = l2) \<and> (v = 0))"|
+"justifies_event (Label I '''' v) (Label R l2 v2) = (v2 = 0)"|
 "justifies_event (Label W l v) (Label R l2 v2) = ((l = l2) \<and> (v = v2))"|
+"justifies_event x (Label W l v) = True"|
+"justifies_event x (Label I l v) = True"|
 "justifies_event x y = False"
 
 (*

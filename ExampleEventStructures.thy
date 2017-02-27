@@ -7,19 +7,6 @@ apply (auto simp add: well_justified_def justified_def empty_ES_def)
 apply (rule refl)
 done
 
-definition ex1 :: "nat event_structure_data" where
-"ex1 \<equiv> 
-  \<lparr> event_set = {30, 31, 32, 33, 34, 35, 36, 37, 38},
-  partial_order = \<lambda>x y. (x,y) \<in>
-   {(30,31), (30,32), (30, 33)},
-  primitive_conflict = \<lambda>x y. (y,x) \<in> {(31,35), (33,34)},
-  label_function = \<lambda>x.
-    if x = 30 then 
-      Label I '''' 0
-    else
-      Label R ''x'' 0 \<rparr>"
-
-
 
 theorem "well_justified ex1"
 apply(auto simp add: well_justified_def)
@@ -72,11 +59,18 @@ definition jctc6_ES :: "nat event_structure_data" where
     else if x = 2 then Label R ''x'' 1
     else if x = 3 then Label R ''y'' 0
     else if x = 4 then Label R ''y'' 1
-    else if x = 5 then Label W ''x'' 1
+    else if x = 5 then Label W ''y'' 1
     else if x = 6 then Label W ''x'' 0
     else Label W ''x'' 1
 \<rparr>"
+value"''''"
+value"label_function jctc6_ES 0"
+value"justifies_event (label_function jctc6_ES 5) (label_function jctc6_ES 4)"
+value"\<exists>e\<in>event_set jctc6_ES. justifies_event (label_function jctc6_ES e) (label_function jctc6_ES 7)"
 
+theorem "well_justified jctc6_ES"
+apply(auto simp add: well_justified_def)
+apply(auto simp add: justified_def)
 
 
 end
