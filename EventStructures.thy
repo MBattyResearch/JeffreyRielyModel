@@ -6,6 +6,8 @@ datatype mem_action = W | R | I
 (*Memory action, location, value*)
 datatype label = Label mem_action string int
 
+type_synonym 'a config = "'a set"
+
 (*Prime Event Structure with below restrictions*)
 record 'a event_structure_data =
   event_set :: "'a set"
@@ -70,8 +72,8 @@ record 'a configuration =
   order :: "'a \<Rightarrow> 'a \<Rightarrow> bool"
   label_fn :: "'a \<Rightarrow> label"*)
 
-definition conflict_free :: "'a set \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
-"conflict_free events conf \<equiv> (\<forall>e\<in>events. \<not>(\<exists>f\<in>events. conf e f))"
+definition conflict_free :: "'a config \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
+"conflict_free c conf \<equiv> (\<forall>e\<in>c. \<not>(\<exists>f\<in>c. conf e f))"
 
 (*Helper function to get the type of memory action from an event label*)
 fun getMemAction :: "label \<Rightarrow> mem_action" where
@@ -84,28 +86,30 @@ definition down_closure :: "'a set \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarr
 "down_closure events order labelfn \<equiv> (\<forall>e\<in>events. \<exists>f\<in>events. 
   (order f e) \<or> ((getMemAction (labelfn e)) = I))"
 
-(*All read events in a configuration are justified by an event in an event structure*)
-definition justified :: "'a event_structure_data \<Rightarrow> bool" where
-"justified es  \<equiv>
-   (\<forall>r\<in>(event_set es). (getMemAction (label_function es r) = R) \<longrightarrow> (\<exists>e\<in>(event_set es). (justifies_event (label_function es e) (label_function es r))))"
+(*All read events in a configuration are justified by an event in that configuration*)
+definition justified :: "'a event_structure_data \<Rightarrow> 'a config \<Rightarrow> bool" where
+"justified es c \<equiv>
+   (\<forall>r\<in> c. (getMemAction (label_function es r) = R) \<longrightarrow> (\<exists>e\<in>c. (justifies_event (label_function es e) (label_function es r))))"
 
 (*for all events in event structure 1 there exists an event in event structure 2 that justifies it*)
-definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
-"justifies_config es1 es2 \<equiv>
-   (\<forall>x\<in>(event_set es2). \<exists>y\<in>(event_set es1). (justifies_event (label_function es1 y) (label_function es2 x)))"
+definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a config \<Rightarrow> 'a config \<Rightarrow> bool" where
+"justifies_config es c1 c2 \<equiv>
+   (\<forall>x\<in>c2. \<exists>y\<in>c1. (justifies_event (label_function es y) (label_function es x)))"
 
+(*
 definition justified_config_reln :: "('a event_structure_data \<times> 'a event_structure_data) set" where
 "justified_config_reln \<equiv> { (e1, e2) . justifies_config e1 e2 }"
+*)
 
 (*written own reflexive transitive closure for reasons*)
 inductive transitive_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a  \<Rightarrow> 'a  \<Rightarrow> bool" for r where
 refl: "transitive_closure r x x "|
-step: "r x y \<Longrightarrow> transitive_closure r y z \<Longrightarrow> transitive_closure r x z " 
+step: "r x y \<Longrightarrow> transitive_closure r y z \<Longrightarrow> transitive_closure r x z"
 
 (*event structure 1 AE (always eventually) justifies event structure 2*)
-definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
-"ae_justifies es1 es2 \<equiv> 
-  \<forall>x.((transitive_closure justifies_config) es1 x)\<longrightarrow> (\<exists>y.((transitive_closure justifies_config) x y) \<and> (justifies_config y es2))"
+definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a config \<Rightarrow> 'a config \<Rightarrow> bool" where
+"ae_justifies es c1 c2 \<equiv> 
+  \<forall>x.(transitive_closure (justifies_config es) c1 x) \<longrightarrow> (\<exists>y.(transitive_closure (justifies_config es) x y) \<and> (justifies_config es y c2))"
 
 definition empty_ES :: "'a event_structure_data" where
 "empty_ES \<equiv> 
@@ -115,14 +119,14 @@ definition empty_ES :: "'a event_structure_data" where
   label_function = \<lambda>x.(Label I '''' 0) \<rparr>"
 
 (*True at configuration level*)
-definition is_subseteq :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
-"is_subseteq es1 es2 \<equiv> (event_set es1) \<subseteq> (event_set es2)"
+definition is_subseteq :: "'a config \<Rightarrow> 'a config \<Rightarrow> bool" where
+"is_subseteq c1 c2 \<equiv>  c1 \<subseteq> c2"
 
-definition subset_AE_justifies :: "'a event_structure_data \<Rightarrow> 'a event_structure_data \<Rightarrow> bool" where
-"subset_AE_justifies es1 es2 \<equiv> (is_subseteq es1 es2) \<and> (ae_justifies es1 es2)"
+definition subset_AE_justifies :: "'a event_structure_data \<Rightarrow> 'a config \<Rightarrow> 'a config \<Rightarrow> bool" where
+"subset_AE_justifies es c1 c2 \<equiv> (is_subseteq c1 c2) \<and> (ae_justifies es c1 c2)"
 
-definition well_justified :: "'a event_structure_data \<Rightarrow> bool" where
-"well_justified c \<equiv> (justified c) \<and> (transitive_closure subset_AE_justifies) empty_ES c"
+definition well_justified :: "'a event_structure_data \<Rightarrow> 'a config  \<Rightarrow> bool" where
+"well_justified es c \<equiv> (isValidES es) \<and> (justified es c) \<and> (transitive_closure (subset_AE_justifies es) (event_set empty_ES) c)"
 
 
 end

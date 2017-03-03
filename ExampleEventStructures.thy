@@ -66,11 +66,12 @@ definition jctc6_ES :: "nat event_structure_data" where
 value"''''"
 value"label_function jctc6_ES 0"
 value"justifies_event (label_function jctc6_ES 5) (label_function jctc6_ES 4)"
-value"\<exists>e\<in>event_set jctc6_ES. justifies_event (label_function jctc6_ES e) (label_function jctc6_ES 7)"
+value"\<forall>v \<in> {0,1,2,3,4,5,6,7}.\<exists>e\<in>event_set jctc6_ES. justifies_event (label_function jctc6_ES e) (label_function jctc6_ES v)"
 
 theorem "well_justified jctc6_ES"
 apply(auto simp add: well_justified_def)
 apply(auto simp add: justified_def)
-
+apply(auto simp add: jctc6_ES_def)
+apply(rule transitive_closurep_trans' empty_ES_def)
 
 end
