@@ -29,29 +29,34 @@ theorem "\<not> (isValidPO (partial_order jctc6))"
   apply(auto simp add:EventStructures.refl_def)
   apply(auto simp add:jctc6_def)
   done
-  
-
-inductive ev :: "nat \<Rightarrow> bool" where
-ev0: "ev 0" |
-evSS: "ev n \<Longrightarrow> ev (Suc(Suc(n)))"
-
-lemma "ev(Suc(Suc 0))"
-  apply(rule evSS)
-  apply(rule ev0)
-  done
 
 theorem "(isValidPO (transitive_closure (partial_order jctc6)))"
   apply(auto)
   apply(auto simp add:EventStructures.refl_def)
-  apply(auto simp add:EventStructures.trans_def)
-  apply(auto simp add:EventStructures.antisym_def)
-  apply(rule transitive_closure.refl)
-  apply(rule transitive_closure.step)
-  apply(auto simp add:EventStructures.transitive_closure.step)
-  apply(auto simp add:partial_order_def)
-  
-
+    apply(rule EventStructures.transitive_closure.intros(1))
+   apply(auto simp add: EventStructures.trans_def)
+   apply(rule transitive_closure_t)
+    apply(simp)
     
+   apply(auto simp add:EventStructures.antisym_def)
+  apply(simp add: jctc6_def)
+    
+    try
+          
+        
+        (*
+  apply(auto simp add:EventStructures.refl_def)
+    apply(auto simp add:EventStructures.trans_def)
+    apply(auto simp add:EventStructures.antisym_def)
+    apply(rule transitive_closure.cases)
+      apply(rule refl)
+     apply(rule refl)
+    apply(rule refl)
+   apply(simp add:transitive_closure.step)
+    
+  apply(simp)
+  apply(auto)
+  *)
 theorem "isValidES jctc6"
 apply(auto simp add:isValidES_def)
 apply(auto simp add:symmetric_def)

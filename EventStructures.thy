@@ -55,6 +55,12 @@ definition isValid :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> ('
   isValidPO po
 )"
 
+declare isValid_def [simp]
+declare minimal_def [simp]
+declare isConfValid_def [simp]
+declare isValidPO_def [simp]
+
+
 definition isValidES :: "'a event_structure_data \<Rightarrow> bool" where
 "isValidES es == isValid (partial_order es) (primitive_conflict es)" 
 
@@ -100,10 +106,28 @@ definition justified_config_reln :: "('a event_structure_data \<times> 'a event_
 "justified_config_reln \<equiv> { (e1, e2) . justifies_config e1 e2 }"
 *)
 
+
 (*written own reflexive transitive closure for reasons*)
 inductive transitive_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a  \<Rightarrow> 'a  \<Rightarrow> bool" for r where
 refl: "transitive_closure r x x "|
 step: "r x y \<Longrightarrow> transitive_closure r y z \<Longrightarrow> transitive_closure r x z"
+
+lemma transitive_closure_t: "\<lbrakk>transitive_closure r x y; transitive_closure r y z\<rbrakk> \<Longrightarrow> transitive_closure r x z"
+  apply(induction rule: transitive_closure.induct)
+   apply(assumption)
+  apply(metis step)
+  done
+    
+(* no idea.
+inductive antisymmetric :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" for r where
+base: "antisymmetric r x y \<Longrightarrow> \<not>(r y x) \<Longrightarrow> (x \<equiv> y)" |
+step: "r x y \<Longrightarrow> antisymmetric r x y" 
+*)
+
+(*symmetric transitive closure (not reflexive) *)
+inductive symmetric_transitive_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a  \<Rightarrow> 'a  \<Rightarrow> bool" for r where
+symm: "symmetric_transitive_closure r x y \<and> x \<noteq> y \<Longrightarrow> symmetric_transitive_closure r y x" |
+step: "r x y \<Longrightarrow> symmetric_transitive_closure r y z \<Longrightarrow> symmetric_transitive_closure r x z"
 
 (*event structure 1 AE (always eventually) justifies event structure 2*)
 definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a config \<Rightarrow> 'a config \<Rightarrow> bool" where
@@ -126,6 +150,5 @@ definition subset_AE_justifies :: "'a event_structure_data \<Rightarrow> 'a conf
 
 definition well_justified :: "'a event_structure_data \<Rightarrow> 'a config  \<Rightarrow> bool" where
 "well_justified es c \<equiv> (isValidES es) \<and> (justified es c) \<and> (transitive_closure (subset_AE_justifies es) (event_set empty_ES) c)"
-
 
 end
