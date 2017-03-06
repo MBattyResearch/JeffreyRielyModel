@@ -16,7 +16,7 @@ record 'a event_structure_data =
   label_function :: "'a \<Rightarrow> label"
 
 definition refl :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
-"refl po \<equiv> (\<forall>x. po x x \<longrightarrow> True)"
+"refl po \<equiv> (\<forall>x. po x x)"
 
 definition trans :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
 "trans po \<equiv> (\<forall>x.\<forall>y.\<forall>z. (po x y \<and> po y z) \<longrightarrow> po x z)"
@@ -51,7 +51,6 @@ definition minimal :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> ('
 definition isValid :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
 "isValid po conf \<equiv> (
   minimal po conf \<and> 
-  confOverPO po conf \<and> 
   isConfValid conf \<and> 
   isValidPO po
 )"
