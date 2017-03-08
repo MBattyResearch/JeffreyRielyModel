@@ -50,19 +50,42 @@ definition minimal :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> ('
 
 definition isValid :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
 "isValid po conf \<equiv> (
+  isValidPO po \<and>
   minimal po conf \<and> 
-  isConfValid conf \<and> 
-  isValidPO po
+  isConfValid conf
 )"
 
 declare isValid_def [simp]
 declare minimal_def [simp]
 declare isConfValid_def [simp]
-declare isValidPO_def [simp]
 
+
+(*written own reflexive transitive closure for reasons*)
+inductive transitive_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a  \<Rightarrow> 'a  \<Rightarrow> bool" for r where
+refl: "transitive_closure r x x "|
+step: "r x y \<Longrightarrow> transitive_closure r y z \<Longrightarrow> transitive_closure r x z"
+
+lemma transitive_closure_t: "\<lbrakk>transitive_closure r x y; transitive_closure r y z\<rbrakk> \<Longrightarrow> transitive_closure r x z"
+  apply(induction rule: transitive_closure.induct)
+   apply(assumption)
+  apply(metis step)
+  done
+    
+(* no idea.
+inductive antisymmetric :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" for r where
+base: "antisymmetric r x y \<Longrightarrow> \<not>(r y x) \<Longrightarrow> (x \<equiv> y)" |
+step: "r x y \<Longrightarrow> antisymmetric r x y" 
+*)
+
+(*symmetric transitive closure (not reflexive) *)
+inductive symmetric_transitive_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a  \<Rightarrow> 'a  \<Rightarrow> bool" for r where
+symm: "symmetric_transitive_closure r x y \<and> x \<noteq> y \<Longrightarrow> symmetric_transitive_closure r y x" |
+step: "r x y \<Longrightarrow> symmetric_transitive_closure r y z \<Longrightarrow> symmetric_transitive_closure r x z"
 
 definition isValidES :: "'a event_structure_data \<Rightarrow> bool" where
-"isValidES es == isValid (partial_order es) (primitive_conflict es)" 
+"isValidES es == isValid 
+  (transitive_closure (partial_order es)) 
+  (symmetric_transitive_closure (primitive_conflict es))" 
 
 fun justifies_event :: "label \<Rightarrow> label \<Rightarrow> bool" where
 "justifies_event (Label I '''' v) (Label R l2 v2) = (v2 = 0)"|
@@ -106,28 +129,6 @@ definition justified_config_reln :: "('a event_structure_data \<times> 'a event_
 "justified_config_reln \<equiv> { (e1, e2) . justifies_config e1 e2 }"
 *)
 
-
-(*written own reflexive transitive closure for reasons*)
-inductive transitive_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a  \<Rightarrow> 'a  \<Rightarrow> bool" for r where
-refl: "transitive_closure r x x "|
-step: "r x y \<Longrightarrow> transitive_closure r y z \<Longrightarrow> transitive_closure r x z"
-
-lemma transitive_closure_t: "\<lbrakk>transitive_closure r x y; transitive_closure r y z\<rbrakk> \<Longrightarrow> transitive_closure r x z"
-  apply(induction rule: transitive_closure.induct)
-   apply(assumption)
-  apply(metis step)
-  done
-    
-(* no idea.
-inductive antisymmetric :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" for r where
-base: "antisymmetric r x y \<Longrightarrow> \<not>(r y x) \<Longrightarrow> (x \<equiv> y)" |
-step: "r x y \<Longrightarrow> antisymmetric r x y" 
-*)
-
-(*symmetric transitive closure (not reflexive) *)
-inductive symmetric_transitive_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a  \<Rightarrow> 'a  \<Rightarrow> bool" for r where
-symm: "symmetric_transitive_closure r x y \<and> x \<noteq> y \<Longrightarrow> symmetric_transitive_closure r y x" |
-step: "r x y \<Longrightarrow> symmetric_transitive_closure r y z \<Longrightarrow> symmetric_transitive_closure r x z"
 
 (*event structure 1 AE (always eventually) justifies event structure 2*)
 definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a config \<Rightarrow> 'a config \<Rightarrow> bool" where
