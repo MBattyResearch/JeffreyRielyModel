@@ -63,11 +63,11 @@ apply auto
 done
 
 function domain_fun:: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a fset" where
-"domain_fun r = { x . (\<exists> y. r x y \<or> r y x) }"
+"domain_fun r = fset { x . (\<exists> y. r x y \<or> r y x) }"
 apply auto
 done
 
-lemma "\<forall>r. (tc_fun (domain_fun r) r) = (transitive_closure r)"
+lemma "\<forall>r. (tc_fun ( event_set jctc6) r) = (transitive_closure r)"
 oops
 
 lemma antisymm_acyclic_r_trans: "\<forall>r . (acyc r) \<longrightarrow> antisym (transitive_closure r)"

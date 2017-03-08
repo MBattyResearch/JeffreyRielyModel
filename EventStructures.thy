@@ -1,5 +1,5 @@
 theory EventStructures
-imports Main Enum String 
+imports Main Enum String "~~/src/HOL/Library/FSet"
 begin
 
 datatype mem_action = W | R | I 
@@ -14,6 +14,9 @@ record 'a event_structure_data =
   partial_order :: "'a \<Rightarrow> 'a \<Rightarrow> bool"
   primitive_conflict :: "'a \<Rightarrow> 'a \<Rightarrow> bool"
   label_function :: "'a \<Rightarrow> label"
+
+definition fin :: "'a set \<Rightarrow> bool" where
+"fin es \<equiv> finite es"
 
 definition refl :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
 "refl po \<equiv> (\<forall>x. po x x)"
@@ -48,8 +51,9 @@ definition minimal :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> ('
 "minimal po conf \<equiv> 
   (\<forall>w.\<forall>x.\<forall>y.\<forall>z. (conf y z \<and> po x y \<and> conf x w \<and> po w z \<longrightarrow> (y = x) \<and> (w = z)))"
 
-definition isValid :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
-"isValid po conf \<equiv> (
+definition isValid :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a set  \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
+"isValid po es conf \<equiv> (
+  finite es \<and>
   isValidPO po \<and>
   minimal po conf \<and> 
   isConfValid conf
@@ -84,7 +88,8 @@ step: "r x y \<Longrightarrow> symmetric_transitive_closure r y z \<Longrightarr
 
 definition isValidES :: "'a event_structure_data \<Rightarrow> bool" where
 "isValidES es == isValid 
-  (transitive_closure (partial_order es)) 
+  (transitive_closure (partial_order es))
+  (event_set es)
   (symmetric_transitive_closure (primitive_conflict es))" 
 
 fun justifies_event :: "label \<Rightarrow> label \<Rightarrow> bool" where
