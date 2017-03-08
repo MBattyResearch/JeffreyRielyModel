@@ -1,5 +1,5 @@
 theory jctc6
-imports EventStructures String BNF_Def
+imports EventStructures String "~~/src/HOL/Library/FSet"
 begin
 
 definition jctc6 :: "string event_structure_data" where
@@ -55,8 +55,9 @@ fun map:: "'a set \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'b set" wher
     | (x::xs) \<Rightarrow> (f x)
     | [] \<Rightarrow> []"
 
-fun tc_fun:: "'a set \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" where
-"tc_fun d r x z = (\<exists>y\<in>d . (r x z) \<or> (tc_fun d r x y \<and> tc_fun d r y z))"
+    (* Probably need to remove y from d in the subgoal *)
+fun tc_fun:: "'a fset  \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" where
+"tc_fun d r x z = (\<exists>y\<in>d . (r x z) \<or> (tc_fun (d - y) r x y \<and> tc_fun (d - y) r y z))"
 
 lemma antisymm_acyclic_r_trans: "\<forall>r . (acyc r) \<longrightarrow> antisym (transitive_closure r)"
   apply(auto simp add:acyc_def)
