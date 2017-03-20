@@ -1,60 +1,74 @@
+section {* Model *}
+text {* This is an implementation of Alan Jeffrey's Event Structure Memory Model in Isabelle/HOL. *}
+  
 theory EventStructures
-imports Main Enum String "~~/src/HOL/Library/FSet"
+imports Main Relation Transitive_Closure
 begin
-
+  
+subsection{* Basic Definitions *}
+text{* There are 3 types of event in the system, Writes, Reads and the Initialisation. *}
 datatype mem_action = W | R | I 
 (*Memory action, location, value*)
+  
+text{* Labels are comprised of an event, a location and a value. *}
 datatype label = Label mem_action string int
 
+text{*Configurations are sets of events. *}
 type_synonym 'a config = "'a set"
 
-(*Prime Event Structure with below restrictions*)
-record 'a event_structure_data =
+text{*Event Structures are sets of events, and relations on those events. Specificically 
+@{term primitive_order}, which is the transitive reduction of the order relation, and 
+@{term primitive_conflict} which when symmetrically, reflexively closed builds the full primitive
+conflict relation as described in the paper.*}
+(*Prime Event Structure with bt selow restrictions*)
+record 'a event_structure =
   event_set :: "'a set"
-  partial_order :: "'a \<Rightarrow> 'a \<Rightarrow> bool"
-  primitive_conflict :: "'a \<Rightarrow> 'a \<Rightarrow> bool"
+  primitive_order :: "'a rel"
+  primitive_conflict :: "'a rel"
   label_function :: "'a \<Rightarrow> label"
-
-definition fin :: "'a set \<Rightarrow> bool" where
-"fin es \<equiv> finite es"
-
-definition refl :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
-"refl po \<equiv> (\<forall>x. po x x)"
-
-definition trans :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
-"trans po \<equiv> (\<forall>x.\<forall>y.\<forall>z. (po x y \<and> po y z) \<longrightarrow> po x z)"
-
-definition antisym :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
-"antisym po \<equiv> (\<forall>x.\<forall>y. (po x y \<and> po y x) \<longrightarrow> x = y)"
-
-definition isValidPO :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
-"isValidPO po \<equiv> (
+  
+text{* A valid program order is reflexive, transitive and antisymmetric. *}
+definition isValidPO :: "'a set \<Rightarrow> 'a rel \<Rightarrow> bool" where
+"isValidPO evs po \<equiv> (
   refl po \<and> 
   trans po \<and> 
   antisym po
 )"
 
-definition symmetric :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
-"symmetric conf \<equiv> (\<forall>x.\<forall>y. conf x y \<longrightarrow> conf y x)" 
+definition symmetric:: "'a rel \<Rightarrow> bool" where
+  "symmetric r \<equiv> \<forall>x y . (x, y) \<in> r \<longrightarrow> (y, x) \<in> r"
 
-definition isConfValid :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
+definition symmetriccl:: "'a rel \<Rightarrow> 'a rel" where
+  "symmetriccl r \<equiv> {(y, x) . (x, y) \<in> r} \<union> r"
+  
+text{* A valid conflict relation is symetric and transitive. *}
+-- {* Should this be minus reflexive edges too? Mark is suspicious *}
+definition isConfValid :: "'a rel \<Rightarrow> bool" where
 "isConfValid conf \<equiv> (
   symmetric conf \<and> 
   trans conf
 )"
 
-definition confOverPO :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
-"confOverPO po conf \<equiv> (\<forall>x.\<forall>y.\<forall>z. (conf x y \<and> po y z) \<longrightarrow> conf x z)"
+text{* Conflict transits through program order. *}
+definition confOverPO :: "'a rel \<Rightarrow> 'a rel \<Rightarrow> bool" where
+"confOverPO po conf \<equiv> (\<forall>x.\<forall>y.\<forall>z. ((x, y) \<in> conf \<and> (y, z) \<in> po) \<longrightarrow> (x, z) \<in> conf)"
 
-(*Minimal/Primitive conflict condition*)
-definition minimal :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
+text{* Primitive conflict has no edges in it which can be infered by the rule 
+@{thm [source] confOverPO_def}. *}
+definition minimal :: "'a rel \<Rightarrow> 'a rel \<Rightarrow> bool" where
 "minimal po conf \<equiv> 
-  (\<forall>w.\<forall>x.\<forall>y.\<forall>z. (conf y z \<and> po x y \<and> conf x w \<and> po w z \<longrightarrow> (y = x) \<and> (w = z)))"
+  (\<forall>w.\<forall>x.\<forall>y.\<forall>z. 
+    ((y, z) \<in> conf \<and> 
+     (x, y) \<in> po \<and> 
+     (x, w) \<in> conf \<and>
+     (w, z) \<in> po \<longrightarrow> (y = x) \<and> (w = z)))"
 
-definition isValid :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a set  \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
-"isValid po es conf \<equiv> (
+text{* Valid event structures are finite, have valid @{term primitive_order}, and valid 
+@{term primitive_conflict} *}
+definition isValid :: "'a set \<Rightarrow> 'a rel  \<Rightarrow> 'a rel \<Rightarrow> bool" where
+"isValid es po conf \<equiv> (
   finite es \<and>
-  isValidPO po \<and>
+  isValidPO es po \<and>
   minimal po conf \<and> 
   isConfValid conf
 )"
@@ -63,35 +77,19 @@ declare isValid_def [simp]
 declare minimal_def [simp]
 declare isConfValid_def [simp]
 
-
-(*written own reflexive transitive closure for reasons*)
-inductive transitive_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a  \<Rightarrow> 'a  \<Rightarrow> bool" for r where
-refl: "transitive_closure r x x "|
-step: "r x y \<Longrightarrow> transitive_closure r y z \<Longrightarrow> transitive_closure r x z"
-
-lemma transitive_closure_t: "\<lbrakk>transitive_closure r x y; transitive_closure r y z\<rbrakk> \<Longrightarrow> transitive_closure r x z"
-  apply(induction rule: transitive_closure.induct)
-   apply(assumption)
-  apply(metis step)
-  done
-    
-(* no idea.
-inductive antisymmetric :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" for r where
-base: "antisymmetric r x y \<Longrightarrow> \<not>(r y x) \<Longrightarrow> (x \<equiv> y)" |
-step: "r x y \<Longrightarrow> antisymmetric r x y" 
-*)
-
-(*symmetric transitive closure (not reflexive) *)
-inductive symmetric_transitive_closure :: "('a  \<Rightarrow> 'a  \<Rightarrow> bool) \<Rightarrow> 'a  \<Rightarrow> 'a  \<Rightarrow> bool" for r where
-symm: "symmetric_transitive_closure r x y \<and> x \<noteq> y \<Longrightarrow> symmetric_transitive_closure r y x" |
-step: "r x y \<Longrightarrow> symmetric_transitive_closure r y z \<Longrightarrow> symmetric_transitive_closure r x z"
-
-definition isValidES :: "'a event_structure_data \<Rightarrow> bool" where
-"isValidES es == isValid 
-  (transitive_closure (partial_order es))
+definition isValidES :: "'a event_structure \<Rightarrow> bool" where
+-- {* Need symmetric closure of primitive conflict *}
+"isValidES es \<equiv> isValid 
   (event_set es)
-  (symmetric_transitive_closure (primitive_conflict es))" 
+  ((primitive_order es)\<^sup>*)
+  ((primitive_conflict es)\<^sup>*)"
 
+(* FIXME 
+function justifies_event :: "label set \<Rightarrow> label rel" where
+"justifies_event evs \<equiv> 
+  { (w, r) . (w \<in> evs) \<and> (r \<in> evs) \<and> (\<exists>l l2 v v2 . ((w = (Label W l v)) \<and> (r = (Label R l2 v2)) \<and> (l = l2) \<and> (v = v2))) } \<union>
+  { (i, r) . (i \<in> evs) \<and> (r \<in> evs) \<and> (\<exists>v . (i = (Label I '''' _)) \<and> (r = (Label R _ v)) \<and> (v = 0))}"
+*)
 fun justifies_event :: "label \<Rightarrow> label \<Rightarrow> bool" where
 "justifies_event (Label I '''' v) (Label R l2 v2) = (v2 = 0)"|
 "justifies_event (Label W l v) (Label R l2 v2) = ((l = l2) \<and> (v = v2))"|
@@ -99,62 +97,55 @@ fun justifies_event :: "label \<Rightarrow> label \<Rightarrow> bool" where
 "justifies_event x (Label I l v) = True"|
 "justifies_event x y = False"
 
-(*
-record 'a configuration = 
-  event_set :: "'a set"
-  order :: "'a \<Rightarrow> 'a \<Rightarrow> bool"
-  label_fn :: "'a \<Rightarrow> label"*)
-
-definition conflict_free :: "'a config \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
-"conflict_free c conf \<equiv> (\<forall>e\<in>c. \<not>(\<exists>f\<in>c. conf e f))"
+definition conflict_free :: "'a config \<Rightarrow> 'a rel \<Rightarrow> bool" where
+"conflict_free c conf \<equiv> (\<forall>e\<in>c. \<not>(\<exists>f\<in>c. (e, f) \<in> conf))"
 
 (*Helper function to get the type of memory action from an event label*)
 fun getMemAction :: "label \<Rightarrow> mem_action" where
-"getMemAction (Label I l v) = I"|
-"getMemAction (Label W l v) = W"|
-"getMemAction (Label R l v) = R"
+"getMemAction (Label x _ _) = x"
 
 (*is this correct?*)
-definition down_closure :: "'a set \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> label) \<Rightarrow> bool" where
-"down_closure events order labelfn \<equiv> (\<forall>e\<in>events. \<exists>f\<in>events. 
-  (order f e) \<or> ((getMemAction (labelfn e)) = I))"
+(* 'a set \<Rightarrow> 'a event_structure \<Rightarrow> bool *)
+(* Note that this is primitive_order\<^sup>+ rather than primitive_order\<^sup>* because we do not want the 
+   reflexive edges when checking for down_closure *)
+definition down_closure :: "'a set \<Rightarrow> 'a event_structure \<Rightarrow> bool" where
+"down_closure events ev_s \<equiv> (\<forall>e\<in>events. \<exists>f\<in>events. 
+  ((f, e) \<in> ((primitive_order ev_s)\<^sup>+)) \<or> ((getMemAction (label_function ev_s e)) = I))"
 
 (*All read events in a configuration are justified by an event in that configuration*)
-definition justified :: "'a event_structure_data \<Rightarrow> 'a config \<Rightarrow> bool" where
+definition justified :: "'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" where
 "justified es c \<equiv>
-   (\<forall>r\<in> c. (getMemAction (label_function es r) = R) \<longrightarrow> (\<exists>e\<in>c. (justifies_event (label_function es e) (label_function es r))))"
+   (\<forall>r\<in> c. (getMemAction (label_function es r) = R) \<longrightarrow> 
+    (\<exists>e\<in>c. (justifies_event (label_function es e) (label_function es r))))"
 
-(*for all events in event structure 1 there exists an event in event structure 2 that justifies it*)
-definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a config \<Rightarrow> 'a config \<Rightarrow> bool" where
-"justifies_config es c1 c2 \<equiv>
-   (\<forall>x\<in>c2. \<exists>y\<in>c1. (justifies_event (label_function es y) (label_function es x)))"
+definition justifies_config :: "'a event_structure \<Rightarrow> 'a config rel" where
+  "justifies_config es \<equiv> 
+    { (c\<^sub>1, c\<^sub>2) . \<forall>x \<in> c\<^sub>2. \<exists>y \<in> c\<^sub>1. (c\<^sub>1 \<subseteq> c\<^sub>2) \<and> (justifies_event (label_function es y) (label_function es x)) }"
 
-(*
-definition justified_config_reln :: "('a event_structure_data \<times> 'a event_structure_data) set" where
-"justified_config_reln \<equiv> { (e1, e2) . justifies_config e1 e2 }"
-*)
+definition justifies_config_inf:: "'a config \<Rightarrow> 'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<lesssim>\<^bsub>_\<^esub> _" [61,60,60] 60) where
+  "justifies_config_inf a es b \<equiv> (a, b) \<in> (justifies_config es)"
 
+definition justfies_config_star_inf::  "'a config \<Rightarrow> 'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<lesssim>\<^sup>*\<^bsub>_\<^esub> _" [61,60,60] 60) where
+    "justfies_config_star_inf a es b \<equiv> (a, b) \<in> (justifies_config es)\<^sup>*"
+  
+definition ae_justifies :: "'a config \<Rightarrow>'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<sqsubseteq>\<^bsub>_\<^esub> _" [61,60,60] 60)where
+  "ae_justifies C es D \<equiv> \<forall>C'. (C\<lesssim>\<^sup>*\<^bsub>es\<^esub>C') \<longrightarrow> 
+    (\<exists>C''. (C'\<lesssim>\<^sup>*\<^bsub>es\<^esub> C'') \<and> (C''\<lesssim>\<^bsub>es\<^esub> D))"
 
-(*event structure 1 AE (always eventually) justifies event structure 2*)
-definition ae_justifies :: "'a event_structure_data \<Rightarrow> 'a config \<Rightarrow> 'a config \<Rightarrow> bool" where
-"ae_justifies es c1 c2 \<equiv> 
-  \<forall>x.(transitive_closure (justifies_config es) c1 x) \<longrightarrow> (\<exists>y.(transitive_closure (justifies_config es) x y) \<and> (justifies_config es y c2))"
+definition ae_justifies_star :: "'a config \<Rightarrow> 'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<sqsubseteq>\<^sup>*\<^bsub>_\<^esub> _" [61,60,60] 60) where
+"ae_justifies_star a es b \<equiv> (a, b) \<in> {(c\<^sub>1, c\<^sub>2) . (c\<^sub>1 \<subseteq> c\<^sub>2) \<and> (c\<^sub>1 \<sqsubseteq>\<^bsub>es\<^esub> c\<^sub>2)}\<^sup>*"
 
-definition empty_ES :: "'a event_structure_data" where
-"empty_ES \<equiv> 
-  \<lparr> event_set = {},
-  partial_order = \<lambda>x y. False,
-  primitive_conflict = \<lambda>x y. False,
-  label_function = \<lambda>x.(Label I '''' 0) \<rparr>"
+definition well_justified :: "'a event_structure \<Rightarrow> 'a config  \<Rightarrow> bool" where
+"well_justified es C \<equiv> 
+  (isValidES es) \<and> (justified es C) \<and> 
+  {}\<sqsubseteq>\<^sup>*\<^bsub>es\<^esub>C"
 
-(*True at configuration level*)
-definition is_subseteq :: "'a config \<Rightarrow> 'a config \<Rightarrow> bool" where
-"is_subseteq c1 c2 \<equiv>  c1 \<subseteq> c2"
-
-definition subset_AE_justifies :: "'a event_structure_data \<Rightarrow> 'a config \<Rightarrow> 'a config \<Rightarrow> bool" where
-"subset_AE_justifies es c1 c2 \<equiv> (is_subseteq c1 c2) \<and> (ae_justifies es c1 c2)"
-
-definition well_justified :: "'a event_structure_data \<Rightarrow> 'a config  \<Rightarrow> bool" where
-"well_justified es c \<equiv> (isValidES es) \<and> (justified es c) \<and> (transitive_closure (subset_AE_justifies es) (event_set empty_ES) c)"
+definition empty_ES :: "string event_structure" where
+"empty_ES \<equiv> \<lparr> 
+  event_set = {},
+  primitive_order ={},
+  primitive_conflict = {},
+  label_function = \<lambda>x.(Label I '''' 0)
+\<rparr>"
 
 end

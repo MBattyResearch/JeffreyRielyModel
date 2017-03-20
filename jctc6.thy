@@ -1,12 +1,12 @@
 theory jctc6
-imports EventStructures String "~~/src/HOL/Library/FSet"
+imports EventStructures String
 begin
 
-definition jctc6 :: "string event_structure_data" where
+definition jctc6 :: "string event_structure" where
 "jctc6 \<equiv> \<lparr> 
     event_set = { ''a'', ''b'', ''c'', ''d'', ''e'', ''f'', ''g'', ''h'' },
-    partial_order =  \<lambda>x y. (x,y) \<in> { (''a'', ''g''), (''a'', ''e''), (''a'', ''d''), (''a'', ''b''), (''g'', ''h''), (''b'', ''c''), (''e'', ''f'') },
-    primitive_conflict =  \<lambda>x y. (x,y) \<in> { (''e'', ''g''), (''b'', ''d'') },
+    primitive_order =  { (''a'', ''g''), (''a'', ''e''), (''a'', ''d''), (''a'', ''b''), (''g'', ''h''), (''b'', ''c''), (''e'', ''f'') },
+    primitive_conflict = { (''e'', ''g''), (''b'', ''d'') },
     label_function = \<lambda>x.
         if x = ''b'' then Label R ''A'' 1 (* r1 *)
         else if x = ''c'' then Label W ''B'' 1
@@ -18,92 +18,37 @@ definition jctc6 :: "string event_structure_data" where
         else Label I '''' 0
 \<rparr>"
 
+
 definition jctc6_expected_results :: "string set set" where 
 "jctc6_expected_results = { {''b'', ''e''} }"
 
-value "\<forall> V \<in> event_set jctc6 . 
-  \<exists> e \<in>event_set jctc6 . justifies_event (label_function jctc6 e) (label_function jctc6 V)"
+  
+ (* play with this is fine, don't keep (finite d). Use locale instead. *)
+function tc_fun:: "'a set  \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" where
+"tc_fun d r x z = ((finite d) \<longrightarrow> (\<exists>y . y \<in> d \<longrightarrow> ((r x z) \<or> (r x y \<and> tc_fun (d - {y}) r y z))))"
+by pat_completeness auto
+termination tc_fun
+  apply(relation "measure (\<lambda>(d,_,_,_) . (card d))")
+   apply(simp_all)
+  using Finite_Set.card_Suc_Diff1 by fastforce
 
-lemma trans_is_reflexive: "\<forall>r. refl (transitive_closure r)"
-  apply(simp add:EventStructures.refl_def transitive_closure.refl)
-  done
+fun domain_fun:: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a set" where
+"domain_fun r =  { x . (\<exists> y. r x y \<or> r y x) }"
 
-    (* Mark pines for an infix \in operator, *)
-   
-lemma r_in_trans:"\<forall>r.\<forall>x.\<forall>y. r x y \<longrightarrow> (transitive_closure r) x y"
-  apply(simp add:transitive_closure.step transitive_closure.refl)
-  done
-
-lemma trans_trans_r: "\<forall>r. trans (transitive_closure r)"
-  apply(auto simp add:EventStructures.trans_def)
-  apply(rule transitive_closure_t)
+lemma acy: "acyclic (primitive_order jctc6)"
+  apply(simp add: jctc6_def)
   apply(auto)
+        apply(simp add: acyclic_def)
+       apply(rule rtrancl.cases, auto)+
   done
 
-  
-definition acyc:: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> bool" where
-  "acyc r \<equiv> \<forall>x y. transitive_closure r x y \<longrightarrow> transitive_closure r y x \<longrightarrow> x = y"
- 
-(*for all events in event structure 1 there exists an event in event structure 2 that justifies it*)
-definition justifies_config :: "'a event_structure_data \<Rightarrow> 'a config \<Rightarrow> 'a config \<Rightarrow> bool" where
-"justifies_config es c1 c2 \<equiv>
-   (\<forall>x\<in>c2. \<exists>y\<in>c1. (justifies_event (label_function es y) (label_function es x)))"
-
-fun map:: "'a set \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'b set" where
-  "map l f =
-    case l of
-    | (x::xs) \<Rightarrow> (f x)
-    | [] \<Rightarrow> []"
-
-
-    (* Probably need to remove y from d in the subgoal *)
-function tc_fun:: "'a fset  \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" where
-"tc_fun d r x z = (\<exists>y . y |\<in>| d \<longrightarrow> ((r x z) \<or> (tc_fun (d |-| {|y|}) r x y \<and> tc_fun (d |-| {|y|}) r y z)))"
-apply auto
-done
-
-function domain_fun:: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a fset" where
-"domain_fun r = { x . (\<exists> y. r x y \<or> r y x) }"
-apply auto
-done
-
-lemma "\<forall>r. (tc_fun (domain_fun r) r) = (transitive_closure r)"
-oops
-
-lemma antisymm_acyclic_r_trans: "\<forall>r . (acyc r) \<longrightarrow> antisym (transitive_closure r)"
-  apply(auto simp add:acyc_def)
-  apply(simp add: antisym_def)
+theorem "isValidPO (event_set jctc6) ((primitive_order jctc6)\<^sup>*)"
+  apply(auto simp add: isValidPO_def jctc6_def)
+    apply(rule refl_rtrancl)
+    apply(rule trans_rtrancl)
+  apply(rule acyclic_impl_antisym_rtrancl)
+  apply(simp add: acy)
+  apply auto
+    apply(simp add: acyclic_def)
+        apply(rule rtrancl.cases, auto)+
   done
-
-definition "x \<equiv> (transitive_closure (partial_order jctc6))"
-  
-theorem acyc_jctc6: "acyc (partial_order jctc6)"
-  apply(simp add:acyc_def)
-  apply(rule transitive_closure.cases transitive_closure.intros(1) transitive_closure.refl)
-    apply(induction rule: transitive_closure.refl)
-   apply(simp add: jctc6_def)
-    sorry
- 
-    
-  
-theorem jctc6_validPO: "isValidPO (transitive_closure (partial_order jctc6))"
-  apply(auto simp add:isValidPO_def)
-    apply(auto simp add:EventStructures.refl_def)
-    apply(simp add: transitive_closure.refl)
-   apply(auto simp add: EventStructures.trans_def)
-   apply(rule transitive_closure_t)
-    apply(simp)
-   apply(auto simp add: EventStructures.antisym_def)
-  apply (meson acyc_def acyc_jctc6)
-  done
-    
-theorem "isValidES jctc6"
-  apply(simp add:isValidES_def jctc6_validPO)
-  oops
-
-
-theorem "\<forall> exp \<in> jctc6_expected_results .
-  \<exists> cand_Config . (exp \<subseteq> cand_Config) \<and> (well_justified jctc6 cand_Config)"
-  oops
-    
-   
