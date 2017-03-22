@@ -4,14 +4,13 @@ begin
 
 theorem emptyESValidES: "isValidES empty_ES"
   apply(auto simp add: isValidES_def empty_ES_def isValidPO_def)
-      defer
-      apply(rule trans_Id)
-     apply(simp add: antisym_def)
-    apply(simp add: symmetric_def)
-   apply(rule trans_Id)
-  apply(rule refl_Id)
+     apply(rule refl_Id)
+    apply(rule trans_Id)
+   apply(rule antisym_Id)
+   apply(simp_all add: symmetriccl_def symmetric_symmetriccl minimal_def isConfValid_def)
+  apply(simp add: symmetric_def trans_def irrefl_def)
   done
-     
+
 theorem "well_justified empty_ES {}"
   apply(auto simp add: well_justified_def)
   apply(rule emptyESValidES)

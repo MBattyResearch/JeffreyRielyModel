@@ -41,12 +41,17 @@ definition symmetric:: "'a rel \<Rightarrow> bool" where
 definition symmetriccl:: "'a rel \<Rightarrow> 'a rel" where
   "symmetriccl r \<equiv> {(y, x) . (x, y) \<in> r} \<union> r"
   
+lemma symmetric_symmetriccl: "\<forall>r . symmetric(symmetriccl r)"
+  by (simp add: symmetric_def symmetriccl_def)
+    
+  
 text{* A valid conflict relation is symetric and transitive. *}
 -- {* Should this be minus reflexive edges too? Mark is suspicious *}
 definition isConfValid :: "'a rel \<Rightarrow> bool" where
 "isConfValid conf \<equiv> (
-  symmetric conf \<and> 
-  trans conf
+  symmetric conf \<and>
+  trans (conf \<union> Id) \<and>
+  irrefl conf
 )"
 
 text{* Conflict transits through program order. *}
@@ -74,15 +79,13 @@ definition isValid :: "'a set \<Rightarrow> 'a rel  \<Rightarrow> 'a rel \<Right
 )"
 
 declare isValid_def [simp]
-declare minimal_def [simp]
-declare isConfValid_def [simp]
 
 definition isValidES :: "'a event_structure \<Rightarrow> bool" where
 -- {* Need symmetric closure of primitive conflict *}
 "isValidES es \<equiv> isValid 
   (event_set es)
   ((primitive_order es)\<^sup>*)
-  ((primitive_conflict es)\<^sup>*)"
+  (symmetriccl ((primitive_conflict es)\<^sup>+))"
 
 (* FIXME 
 function justifies_event :: "label set \<Rightarrow> label rel" where
