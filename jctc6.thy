@@ -1,5 +1,5 @@
 theory jctc6
-imports EventStructures String
+imports EventStructures String "$AFP/Transitive-Closure/Transitive_Closure_List_Impl"
 begin
 
 definition jctc6 :: "string event_structure" where
@@ -22,33 +22,83 @@ definition jctc6 :: "string event_structure" where
 definition jctc6_expected_results :: "string set set" where 
 "jctc6_expected_results = { {''b'', ''e''} }"
 
-  
- (* play with this is fine, don't keep (finite d). Use locale instead. *)
-function tc_fun:: "'a set  \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" where
-"tc_fun d r x z = ((finite d) \<longrightarrow> (\<exists>y . y \<in> d \<longrightarrow> ((r x z) \<or> (r x y \<and> tc_fun (d - {y}) r y z))))"
-by pat_completeness auto
-termination tc_fun
-  apply(relation "measure (\<lambda>(d,_,_,_) . (card d))")
-   apply(simp_all)
-  using Finite_Set.card_Suc_Diff1 by fastforce
-
-fun domain_fun:: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a set" where
-"domain_fun r =  { x . (\<exists> y. r x y \<or> r y x) }"
-
-lemma acy: "acyclic (primitive_order jctc6)"
+lemma jctc6_acyc_po: "acyclic (primitive_order jctc6)"
   apply(simp add: jctc6_def)
   apply(auto)
         apply(simp add: acyclic_def)
        apply(rule rtrancl.cases, auto)+
   done
 
-theorem "isValidPO (event_set jctc6) ((primitive_order jctc6)\<^sup>*)"
-  apply(auto simp add: isValidPO_def jctc6_def)
+lemma jctc6_valid_PO: "isValidPO (event_set jctc6) ((primitive_order jctc6)\<^sup>*)"
+  apply(auto simp add: isValidPO_def)
     apply(rule refl_rtrancl)
     apply(rule trans_rtrancl)
   apply(rule acyclic_impl_antisym_rtrancl)
-  apply(simp add: acy)
-  apply auto
-    apply(simp add: acyclic_def)
-        apply(rule rtrancl.cases, auto)+
+  apply(simp add: jctc6_acyc_po)
   done
+
+lemma jctc6_is_finite: "finite (event_set jctc6)"
+  by (simp add: jctc6_def)
+  
+lemma symm_imp_symm_trancl: "symmetric r \<longrightarrow> symmetric (r\<^sup>+)"
+  apply(auto simp add: symmetric_def)
+   apply(erule trancl.induct[where ?P = "\<lambda>a b. (b, a) \<in> r\<^sup>+"], auto, meson trancl_into_trancl2)+
+  done
+
+lemma symm_pc: "symmetric ((symmetriccl r)\<^sup>+)"
+  apply(simp add: symmetric_def)
+  by (meson symm_imp_symm_trancl symmetric_def symmetric_symmetriccl)
+
+lemma jctc6_symm_conflict: "symmetric ((symmetriccl (primitive_conflict jctc6))\<^sup>+ - Id)"
+  apply(simp add: symmetric_def)
+  apply (meson symm_pc symmetric_def)
+  done
+    
+
+    
+lemma jctc6_is_conf_valid: "isConfValid ((symmetriccl (primitive_conflict jctc6))\<^sup>+ - Id)"
+  apply(simp add: isConfValid_def)
+    apply(auto)
+   apply(simp add: jctc6_symm_conflict)
+  apply(simp add: trans_rtrancl)
+  done
+                      
+value "memo_list_rtrancl [(''e'', ''g''), (''b'', ''d'')]"
+    
+lemma jctc6_is_minimal: "minimal ((primitive_order jctc6)\<^sup>*) ((symmetriccl (primitive_conflict jctc6))\<^sup>+ - Id)"
+  apply(simp add: minimal_def jctc6_def symmetriccl_def symmetric_def)
+  apply auto
+  apply (erule rtrancl.cases)
+    apply simp
+        
+  -- \<open> Do clever induction thingy with that where syntax, yo! \<close>
+
+    
+   
+    
+  sorry
+  
+theorem jctc_isValid: "isValidES jctc6"
+  apply(simp add: isValidES_def)
+  apply(simp add: jctc6_is_finite)
+  apply(simp add: jctc6_valid_PO)
+  apply(simp add: jctc6_is_minimal)
+  apply(simp add: jctc6_is_conf_valid)
+  done
+    
+thm "justifies_event.induct"
+thm "justifies_event.cases"
+  
+theorem "\<exists>C . well_justified jctc6 C \<and> {''b'', ''e''} \<subseteq> C"
+  apply(simp add: well_justified_def)
+  apply(simp add: jctc_isValid)
+  apply(simp add: justified_def ae_justifies_star_def ae_justifies_def)
+  apply(simp add: justifies_config_star_inf_def justifies_config_inf_def)
+  apply(simp add: justifies_config_def)
+  apply(induct rule: justifies_event.cases)
+        apply auto[1]
+       apply simp
+          apply auto[1]
+           apply simp
+  oops
+    

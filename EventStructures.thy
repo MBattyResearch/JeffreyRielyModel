@@ -36,14 +36,14 @@ definition isValidPO :: "'a set \<Rightarrow> 'a rel \<Rightarrow> bool" where
 )"
 
 definition symmetric:: "'a rel \<Rightarrow> bool" where
-  "symmetric r \<equiv> \<forall>x y . (x, y) \<in> r \<longrightarrow> (y, x) \<in> r"
+  "symmetric r \<equiv> \<forall>a b . (a, b) \<in> r \<longleftrightarrow> (b, a) \<in> r"
 
 definition symmetriccl:: "'a rel \<Rightarrow> 'a rel" where
   "symmetriccl r \<equiv> {(y, x) . (x, y) \<in> r} \<union> r"
   
-lemma symmetric_symmetriccl: "\<forall>r . symmetric(symmetriccl r)"
-  by (simp add: symmetric_def symmetriccl_def)
-    
+lemma symmetric_symmetriccl: "\<forall>r . symmetric (symmetriccl r)"
+  apply(simp add: symmetric_def symmetriccl_def)
+  by auto    
   
 text{* A valid conflict relation is symetric and transitive. *}
 -- {* Should this be minus reflexive edges too? Mark is suspicious *}
@@ -85,7 +85,7 @@ definition isValidES :: "'a event_structure \<Rightarrow> bool" where
 "isValidES es \<equiv> isValid 
   (event_set es)
   ((primitive_order es)\<^sup>*)
-  (symmetriccl ((primitive_conflict es)\<^sup>+))"
+  ((symmetriccl (primitive_conflict es))\<^sup>+ - Id)"
 
 (* FIXME 
 function justifies_event :: "label set \<Rightarrow> label rel" where
@@ -96,8 +96,8 @@ function justifies_event :: "label set \<Rightarrow> label rel" where
 fun justifies_event :: "label \<Rightarrow> label \<Rightarrow> bool" where
 "justifies_event (Label I '''' v) (Label R l2 v2) = (v2 = 0)"|
 "justifies_event (Label W l v) (Label R l2 v2) = ((l = l2) \<and> (v = v2))"|
-"justifies_event x (Label W l v) = True"|
-"justifies_event x (Label I l v) = True"|
+(*"justifies_event x (Label W l v) = True"|
+"justifies_event x (Label I l v) = True"|*)
 "justifies_event x y = False"
 
 definition conflict_free :: "'a config \<Rightarrow> 'a rel \<Rightarrow> bool" where
@@ -123,13 +123,16 @@ definition justified :: "'a event_structure \<Rightarrow> 'a config \<Rightarrow
 
 definition justifies_config :: "'a event_structure \<Rightarrow> 'a config rel" where
   "justifies_config es \<equiv> 
-    { (c\<^sub>1, c\<^sub>2) . \<forall>x \<in> c\<^sub>2. \<exists>y \<in> c\<^sub>1. (c\<^sub>1 \<subseteq> c\<^sub>2) \<and> (justifies_event (label_function es y) (label_function es x)) }"
+    { (c\<^sub>1, c\<^sub>2) . \<forall>x \<in> c\<^sub>2. \<exists>y \<in> c\<^sub>1. (c\<^sub>1 \<subseteq> c\<^sub>2) \<and> 
+      (getMemAction (label_function es x) = R) \<and>
+      ((getMemAction (label_function es y) = W) \<or> (getMemAction (label_function es y) = I)) \<and>
+      (justifies_event (label_function es y) (label_function es x)) }"
 
 definition justifies_config_inf:: "'a config \<Rightarrow> 'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<lesssim>\<^bsub>_\<^esub> _" [61,60,60] 60) where
   "justifies_config_inf a es b \<equiv> (a, b) \<in> (justifies_config es)"
 
-definition justfies_config_star_inf::  "'a config \<Rightarrow> 'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<lesssim>\<^sup>*\<^bsub>_\<^esub> _" [61,60,60] 60) where
-    "justfies_config_star_inf a es b \<equiv> (a, b) \<in> (justifies_config es)\<^sup>*"
+definition justifies_config_star_inf::  "'a config \<Rightarrow> 'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<lesssim>\<^sup>*\<^bsub>_\<^esub> _" [61,60,60] 60) where
+    "justifies_config_star_inf a es b \<equiv> (a, b) \<in> (justifies_config es)\<^sup>*"
   
 definition ae_justifies :: "'a config \<Rightarrow>'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<sqsubseteq>\<^bsub>_\<^esub> _" [61,60,60] 60)where
   "ae_justifies C es D \<equiv> \<forall>C'. (C\<lesssim>\<^sup>*\<^bsub>es\<^esub>C') \<longrightarrow> 
