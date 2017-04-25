@@ -17,3 +17,10 @@ theorem emptyESWellJustified: "well_justified empty_ES {}"
   apply(rule emptyESValidES)
   apply(auto simp add: empty_ES_def justified_def ae_justifies_subset_star_def)
   done
+
+theorem emptyESJustEmptyES: "{} \<lesssim>\<^bsub>es\<^esub> {}"
+  apply(auto simp add: justifies_config_inf_def justifies_config_subset_def justifies_config_def)
+  done
+    
+end
+  
