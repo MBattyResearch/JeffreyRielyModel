@@ -119,32 +119,38 @@ definition down_closure :: "'a set \<Rightarrow> 'a event_structure \<Rightarrow
 definition justified :: "'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" where
 "justified es c \<equiv>
    (\<forall>r\<in> c. (getMemAction (label_function es r) = R) \<longrightarrow> 
-    (\<exists>e\<in>c. (justifies_event (label_function es e) (label_function es r))))"
-
+    (\<exists>e\<in>c. (justifies_event (label_function es e) (label_function es r))))
+"
 definition justifies_config :: "'a event_structure \<Rightarrow> 'a config rel" where
   "justifies_config es \<equiv> 
-    { (c\<^sub>1, c\<^sub>2) . \<forall>x \<in> c\<^sub>2. \<exists>y \<in> c\<^sub>1. (c\<^sub>1 \<subseteq> c\<^sub>2) \<and> 
-      (getMemAction (label_function es x) = R) \<and>
+    { (c\<^sub>1, c\<^sub>2) . \<forall>x \<in> c\<^sub>2. \<exists>y \<in> c\<^sub>1. 
+      (getMemAction (label_function es x) = R) \<longrightarrow>
       ((getMemAction (label_function es y) = W) \<or> (getMemAction (label_function es y) = I)) \<and>
       (justifies_event (label_function es y) (label_function es x)) }"
 
+definition justifies_config_subset :: "'a event_structure \<Rightarrow> 'a config rel" where
+  "justifies_config_subset es \<equiv> { (c\<^sub>1, c\<^sub>2) . (c\<^sub>1 \<subseteq> c\<^sub>2) \<and> (c\<^sub>1, c\<^sub>2) \<in> justifies_config es }"
+
 definition justifies_config_inf:: "'a config \<Rightarrow> 'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<lesssim>\<^bsub>_\<^esub> _" [61,60,60] 60) where
-  "justifies_config_inf a es b \<equiv> (a, b) \<in> (justifies_config es)"
+  "justifies_config_inf a es b \<equiv> (a, b) \<in> (justifies_config_subset es)"
 
 definition justifies_config_star_inf::  "'a config \<Rightarrow> 'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<lesssim>\<^sup>*\<^bsub>_\<^esub> _" [61,60,60] 60) where
-    "justifies_config_star_inf a es b \<equiv> (a, b) \<in> (justifies_config es)\<^sup>*"
+    "justifies_config_star_inf a es b \<equiv> (a, b) \<in> (justifies_config_subset es)\<^sup>*"
   
-definition ae_justifies :: "'a config \<Rightarrow>'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<sqsubseteq>\<^bsub>_\<^esub> _" [61,60,60] 60)where
-  "ae_justifies C es D \<equiv> \<forall>C'. (C\<lesssim>\<^sup>*\<^bsub>es\<^esub>C') \<longrightarrow> 
-    (\<exists>C''. (C'\<lesssim>\<^sup>*\<^bsub>es\<^esub> C'') \<and> (C''\<lesssim>\<^bsub>es\<^esub> D))"
+definition ae_justifies :: "'a config \<Rightarrow>'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" where
+  "ae_justifies C es D \<equiv> \<forall>C'. (C\<lesssim>\<^sup>*\<^bsub>es\<^esub>C') \<longrightarrow> (\<exists>C''. (C'\<lesssim>\<^sup>*\<^bsub>es\<^esub> C'') \<and> (C'', D) \<in> justifies_config es)"
+  
+definition ae_justifies_subset :: "'a config \<Rightarrow>'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<sqsubseteq>\<^bsub>_\<^esub> _" [61,60,60] 60) where
+  "ae_justifies_subset C es D \<equiv> C \<subseteq> D \<and> ae_justifies C es D"
 
-definition ae_justifies_star :: "'a config \<Rightarrow> 'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<sqsubseteq>\<^sup>*\<^bsub>_\<^esub> _" [61,60,60] 60) where
-"ae_justifies_star a es b \<equiv> (a, b) \<in> {(c\<^sub>1, c\<^sub>2) . (c\<^sub>1 \<subseteq> c\<^sub>2) \<and> (c\<^sub>1 \<sqsubseteq>\<^bsub>es\<^esub> c\<^sub>2)}\<^sup>*"
+definition ae_justifies_subset_star :: "'a config \<Rightarrow> 'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" ("_ \<sqsubseteq>\<^sup>*\<^bsub>_\<^esub> _" [61,60,60] 60) where
+"ae_justifies_subset_star a es b \<equiv> (a, b) \<in> {(c\<^sub>1, c\<^sub>2) . (c\<^sub>1 \<sqsubseteq>\<^bsub>es\<^esub> c\<^sub>2)}\<^sup>*"
 
 definition well_justified :: "'a event_structure \<Rightarrow> 'a config  \<Rightarrow> bool" where
 "well_justified es C \<equiv> 
   (isValidES es) \<and> (justified es C) \<and> 
   {}\<sqsubseteq>\<^sup>*\<^bsub>es\<^esub>C"
+
 
 definition empty_ES :: "string event_structure" where
 "empty_ES \<equiv> \<lparr> 
