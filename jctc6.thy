@@ -1,5 +1,5 @@
 theory jctc6
-  imports EventStructures ExampleEventStructures 
+  imports EventStructures ExampleEventStructures ESProperties
           String Relation Transitive_Closure 
 begin
 
@@ -46,23 +46,10 @@ lemma jctc6_valid_PO: "isValidPO (event_set jctc6) ((primitive_order jctc6)\<^su
 lemma jctc6_is_finite: "finite (event_set jctc6)"
   by (simp add: jctc6_def)
   
-lemma symm_imp_symm_trancl: "symmetric r \<longrightarrow> symmetric (r\<^sup>+)"
-  apply(auto simp add: symmetric_def)
-  apply(erule trancl.induct[where ?P = "\<lambda>a b. (b, a) \<in> r\<^sup>+"])
-  apply auto
-   apply(meson trancl_into_trancl2)
-  apply(erule trancl.induct[where ?P = "\<lambda>a b. (b, a) \<in> r\<^sup>+"])
-    apply auto
-  apply(meson trancl_into_trancl2)
-  done
 
-lemma symm_pc: "symmetric ((symmetriccl r)\<^sup>+)"
-  apply(simp add: symmetric_def)
-  by (meson symm_imp_symm_trancl symmetric_def symmetric_symmetriccl)
-
-lemma jctc6_symm_conflict: "symmetric ((symmetriccl (primitive_conflict jctc6))\<^sup>+ - Id)"
-  apply(simp add: symmetric_def)
-  apply (meson symm_pc symmetric_def)
+lemma jctc6_symm_conflict: "sym ((symmetriccl (primitive_conflict jctc6))\<^sup>+ - Id)"
+  apply(simp add: sym_def)
+  apply (meson symm_pc sym_def)
   done
     
 
@@ -128,65 +115,75 @@ theorem jctc_isValid: "isValidES jctc6"
   apply(simp add: jctc6_is_minimal)
   apply(simp add: jctc6_is_conf_valid)
   done
-    
-thm "justifies_event.induct"
-thm "justifies_event.cases"
-  
-(* Possibly not very useful.
-inductive aejI :: "'a config \<Rightarrow>'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" where
-AEJ: "\<lbrakk> \<forall>C' . C \<lesssim>\<^sup>*\<^bsub>es\<^esub> C'; \<exists>C'' . C' \<lesssim>\<^sup>*\<^bsub>es\<^esub> C'' \<and> C'' \<lesssim>\<^bsub>es\<^esub> D \<rbrakk> \<Longrightarrow> aejI C es D"
 
-lemma "aejI C es D \<Longrightarrow> ae_justifies C es D"
-  apply(simp add: ae_justifies_def)
-  apply(simp add: aejI.simps)
-  oops
-    
-lemma "ae_justifies C es D \<Longrightarrow> aejI C es D"
-  apply(simp add: ae_justifies_def)
-  apply(simp add: aejI.simps)
-  apply auto
-    try
-*)
 definition jctc6_exec:: "nat set" where
   "jctc6_exec \<equiv> {1,2,3,5,6}"
 
 definition jctc6_C2:: "nat set" where
   "jctc6_C2 \<equiv> {1,2,3}"
   
-lemma ae_justifies_refl: "C \<lesssim>\<^sup>*\<^bsub>es\<^esub> C"
+lemma ae_justifies_refl[simp]: "C \<lesssim>\<^sup>*\<^bsub>es\<^esub> C"
   apply(simp add: justifies_config_star_inf_def)
   done
     
 theorem jctc6_reads: "(getMemAction (label_function jctc6 r) = R) = (r \<in> {4,7,2,5})"
   apply(simp add:jctc6_def)
   done   
-  
-lemma foo: "{} \<lesssim>\<^sup>*\<^bsub>es\<^esub> C \<Longrightarrow> ({}, C) \<in> justifies_config jctc6"
-  apply(simp add: justifies_config_star_inf_def)
-  apply(simp add: justifies_config_subset_def)
-  
-  oops
         
 lemma rtrancl_eq_Id_trancl: "r\<^sup>* = Id \<union> r\<^sup>+"
   by (simp add: Nitpick.rtrancl_unfold Un_commute)
-  
-  
+
 -- {* For every step of adding something to C' we have that the previous steps are included, so any
       "dependants" remain.
       Mark: in the final step (C_0,C') , all reads in C' are justified by C_0, and C_0 is a subset,
       so all reads in C' are justified by writes in C'. *}
-lemma just_star_imp_just: "{} \<lesssim>\<^sup>*\<^bsub>es\<^esub> C' \<Longrightarrow> C' \<lesssim>\<^bsub>es\<^esub> C'"
-  apply(simp add: justifies_config_star_inf_def) 
+lemma aejrefl_and_aejstar_imp_aej: "C \<lesssim>\<^bsub>es\<^esub> C \<Longrightarrow> C \<lesssim>\<^sup>*\<^bsub>es\<^esub> C' \<Longrightarrow> C' \<lesssim>\<^bsub>es\<^esub> C'"
+  apply(simp add: justifies_config_star_inf_def)
   apply(simp add: rtrancl_eq_Id_trancl)
-  apply(case_tac "{}=C'")                    
+    apply(erule disjE)
    apply(simp_all)
-   apply(rule emptyESJustEmptyES)
   apply(simp add: trancl_unfold_right)
-    apply(simp add: justifies_config_subset_def justifies_config_def)
-      
-  sorry
-  
-lemma not_read_6: "\<not> (getMemAction (label_function jctc6 6) = R)"
+  apply(simp add: justifies_config_subset_def justifies_config_def)
+  apply clarsimp
+  apply(rename_tac "C\<^sub>0")
+  apply(simp add: justifies_config_inf_def justifies_config_subset_def justifies_config_def)
+  apply(rule ballI)
+  apply blast
+  done
+     
+     
+lemma just_star_imp_just: "\<C> \<lesssim>\<^sup>*\<^bsub>es\<^esub> C' \<Longrightarrow> C' \<lesssim>\<^bsub>es\<^esub> C'"
+  apply(rule aejrefl_and_aejstar_imp_aej [where C=\<C>])
+   apply(simp add: emptyESJustEmptyES)
+  apply(assumption)
+  done
+    
+lemma not_read_1[simp]: "\<not>(getMemAction (label_function jctc6 (Suc 0)) = R)"
+  apply(simp add: jctc6_def)
+  done
+
+lemma not_read_3[simp]: "\<not>(getMemAction (label_function jctc6 3) = R)"
+  apply(simp add: jctc6_def)
+  done
+    
+lemma is_read_simp[simp]: "\<not>(getMemAction (label_function es x) = R) \<Longrightarrow> (is_read x es = False)"
+  apply(simp add: is_read_def)
+  done
+
+lemma is_read_2[simp]: "getMemAction (label_function jctc6 2) = R"
+  apply(simp add: jctc6_def)
+  done
+        
+lemma not_read_6[simp]: "\<not> (getMemAction (label_function jctc6 6) = R)"
+  apply(simp add: jctc6_def)
+  done
+
+lemma read_of_init_7[simp]: "(getMemAction (label_function jctc6 7) = R) \<and> 
+    justifies_event (label_function jctc6 1) (label_function jctc6 7)"
+  apply(simp add: jctc6_def)
+  done
+    
+lemma not_read_8[simp]: "\<not> (getMemAction (label_function jctc6 8) = R)"
   apply(simp add: jctc6_def)
   done
     
@@ -205,12 +202,50 @@ lemma write_add_justified: (*"{} \<lesssim>\<^sup>*\<^bsub>es\<^esub> C \<Longri
   apply(simp)
   apply(rule conjI)
     apply(auto)[1]
-  apply (simp add: justifies_config_def)
-   apply(simp add: not_read_6)
-    apply(auto)[1]
-       apply(rule ballI)
-    apply(rule impI)
+  apply (simp add: justifies_config_def is_read_def)
+  apply(auto)[1]
+  apply (simp add: is_read_def)
   apply(auto simp add: jctc6_def jctc6_C2_def)
+  done
+    
+lemma add_init_justified[simp]: "{} \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C \<Longrightarrow> C \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C \<union> {1}"
+  apply (simp add: justifies_config_def)
+      apply(insert just_star_imp_just)
+  apply(simp add: justifies_config_star_inf_def justifies_config_subset_def justifies_config_inf_def)
+      apply(rule r_into_rtrancl)
+  apply(simp)
+  apply(rule conjI)
+    apply(auto)[1]
+  apply(simp add: justifies_config_def is_read_def)
+  done
+
+lemma add_7_8_justified: "{} \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C' \<Longrightarrow> 6 \<notin> C' \<Longrightarrow> 8 \<notin> C' \<Longrightarrow> 5 \<notin> C' \<Longrightarrow>
+   (C' \<union> {1, 7, 8}, jctc6_C2) \<in> justifies_config jctc6"
+  apply(simp add: justifies_config_star_inf_def justifies_config_subset_def justifies_config_inf_def)
+  apply(simp add: justifies_config_def)
+  apply(simp add: jctc6_C2_def jctc6_def)
+  done
+
+lemma justified_7_8: "justified jctc6 {1,7,8}"
+  apply(simp add: jctc6_def justified_def)
+  done
+
+lemma add_1: "{} \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C \<Longrightarrow> C \<union> {1} \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C \<union> {1,7,8} \<Longrightarrow> C  \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C \<union> {1,7,8}"
+  apply(insert add_init_justified)
+  apply (simp only: justifies_config_star_inf_def)
+  by fastforce
+    
+lemma add_7_8_allowed: "{} \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C \<Longrightarrow> 6 \<notin> C \<Longrightarrow> 8 \<notin> C \<Longrightarrow> 5 \<notin> C \<Longrightarrow> 
+    C \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C \<union> {1, 7, 8}"
+  apply(rule add_1)
+    apply(assumption)
+   apply(insert just_star_imp_just)
+  apply(simp only: justifies_config_star_inf_def)
+  apply(simp only: justifies_config_subset_def justifies_config_inf_def)
+   apply(simp only: justifies_config_def)
+  apply(rule r_into_rtrancl)
+  apply(auto)[1]
+   apply(simp add: jctc6_def)
   done
     
 text {* We want to case split on C', if C' contains a write from which we can justify 2 then we're 
@@ -221,19 +256,14 @@ theorem round_1: "({}, jctc6_C2) \<in> {(c\<^sub>1, c\<^sub>2). c\<^sub>1 \<sqsu
   apply (rule allI)
   apply(rule impI)
   apply(case_tac "6 \<in> C' \<or> 8 \<in> C'")
-      apply(rule_tac x=C' in exI)
+  apply(rule_tac x=C' in exI)
     -- {* We have the cases for C' now. Let's dispatch the first where we don't need to add 
           anything to C''*}
-    -- {* When 6 is in C', we can pick C'' = C' and always add 2 to D *}
-    apply(simp add: ae_justifies_refl justifies_config_inf_def justifies_config_def)
-   apply(simp add: jctc6_reads jctc6_C2_def)
-    
-   -- {* These steps are required to prune the proof state back *}
-   apply(rule conjI)
-    apply(auto)[1]
-   apply(rule conjI)
-    apply(erule disjE)
-    
+    -- {* When 6 is in C', we can pick C'' = C' and always add 5 to D *}
+   apply(simp add: justifies_config_inf_def justifies_config_def)
+   apply(simp add: jctc6_reads jctc6_C2_def is_read_def)
+   apply(auto)[1]
+
     -- {* This handles the 6 \<in> C'' case. 6 can justify 2 so we're good to proceed. *}
     apply(rule_tac x=6 in bexI)
      apply(simp add: jctc6_def)
@@ -247,29 +277,99 @@ theorem round_1: "({}, jctc6_C2) \<in> {(c\<^sub>1, c\<^sub>2). c\<^sub>1 \<sqsu
     apply auto[1]
     -- {* This is the 6 in C' case done \o/ *}
     
-    
+  -- {* If 5 is in C' we may add 6 *}
   apply(case_tac "5 \<in> C'")
    apply(rule_tac x="C'\<union>{6}" in exI)
    apply(simp add: write_add_justified)
     
   -- {* If 5 is not in C' we can add 7 and 8 as they're not in conflict. This gets us towards our 
         goal. Adding 7 is justified by the init, and adding 8 is justified because 8 is a write. *}
-  apply(rule_tac x="C'\<union>{7,8}" in exI)
+  apply(rule_tac x="C'\<union>{1,7,8}" in exI)
+  apply(rule conjI)
+   apply(rule add_7_8_allowed, assumption+)
+  apply(rule add_7_8_justified, assumption+)
+  done
     
 
-    sorry
-
-lemma C1_subset_exec: "jctc6_C2 \<subseteq> jctc6_exec"
+lemma C2_subset_exec: "jctc6_C2 \<subseteq> jctc6_exec"
   apply(auto simp add: jctc6_C2_def jctc6_exec_def)  
   done
+
+lemma "{1,2,3} \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> jctc6_exec \<Longrightarrow> {1,2,3} \<union> m \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> jctc6_exec"
+  apply(simp only: justifies_config_star_inf_def)
+  apply(simp only: justifies_config_subset_def justifies_config_inf_def)
+  apply(simp only: justifies_config_def)
+    oops
+                                        
+lemma "({1,2,3}, jctc6_exec) \<in> justifies_config jctc6"
+  apply(simp add: justifies_config_def)
+  apply(simp add: jctc6_exec_def jctc6_def)
+    oops
+      
+lemma eight_just_2: "8 \<in> C' \<Longrightarrow> is_read 2 jctc6 \<Longrightarrow> (\<exists>y\<in>C'. justifies_event (label_function jctc6 y) (label_function jctc6 2))"
+  apply(simp add: jctc6_def)
+  apply(blast) -- wtf
+  done
+
+  
+    
+    
+lemma "three_just_5": "({Suc 0, 2, 3}, C') \<in> {(c\<^sub>1, c\<^sub>2). c\<^sub>1 \<subseteq> c\<^sub>2 \<and> (\<forall>x\<in>c\<^sub>2. is_read x jctc6 \<longrightarrow> (\<exists>y\<in>c\<^sub>1. justifies_event (label_function jctc6 y) (label_function jctc6 x)))}\<^sup>* \<Longrightarrow>
+    8 \<in> C' \<Longrightarrow> is_read 5 jctc6 \<Longrightarrow> \<exists>y\<in>C'. justifies_event (label_function jctc6 y) (label_function jctc6 5)"
+  apply(rule_tac x=3 in bexI)
+   apply(simp add: jctc6_def)
+  apply(insert aej_subset[where es=jctc6, where C="{Suc 0, 2, 3}", where D=C'])
+  apply auto
+  apply(simp add: justifies_config_star_inf_def justifies_config_subset_def justifies_config_def)
+  done
+
+    
+lemma foo: "jctc6_C2 \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C' \<Longrightarrow> 8 \<in> C' \<Longrightarrow> 
+  \<exists>C''. C' \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C'' \<and> (C'', jctc6_exec) \<in> justifies_config jctc6"
+  apply(simp only: justifies_config_star_inf_def)
+  apply(simp only: justifies_config_subset_def justifies_config_inf_def)
+  apply(simp only: justifies_config_def)
+  apply auto
+  apply(simp add: jctc6_C2_def jctc6_exec_def)
+  apply(rule_tac x=C' in exI)
+  apply(rule conjI) 
+   prefer 2
+   apply(rule conjI)
+    apply(rule impI)
+    apply(simp only: eight_just_2)
+    apply(simp add: three_just_5)
+  apply(auto)[1]
+  done
+
+lemma "x \<in> C' \<Longrightarrow> is_read x jctc6 \<Longrightarrow> \<exists>y\<in>C'. justifies_event (label_function jctc6 y) (label_function jctc6 x) \<Longrightarrow>    
+  (C', C') \<in> {(c\<^sub>1, c\<^sub>2). c\<^sub>1 \<subseteq> c\<^sub>2 \<and> (c\<^sub>1, c\<^sub>2) \<in> justifies_config jctc6}"
+  apply(simp add: justifies_config_def)
+  apply auto
+  apply(rule bexI)
+  try
+    oops
+
+    
+    
+lemma foo_two: "jctc6_C2 \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C' \<Longrightarrow> 5 \<in> C' \<Longrightarrow> 
+    \<exists>C''. C' \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C'' \<and> (C'', jctc6_exec) \<in> justifies_config jctc6"
+  apply(rule_tac x="C\<union>{6}" in exI)
+  apply(simp add: justifies_config_def)
+    oops
     
 text {* Similar to the previous argument, whatever the opponent picks in C' we can always add a WA1 
 either with event 6 or 8. If 6 or 8 are in C' we can pick C'' = C' and have D, otherwise we must add
 one of them to C'' to get D *}
 theorem round_2: "(jctc6_C2, jctc6_exec) \<in> {(c\<^sub>1, c\<^sub>2). c\<^sub>1 \<sqsubseteq>\<^bsub>jctc6\<^esub> c\<^sub>2}"
-  apply(simp add: ae_justifies_def)
-  apply(cases "6 \<in> C' \<or> 8 \<in> C'")
-  sorry
+  apply(simp add: ae_justifies_def ae_justifies_subset_def)
+    apply(simp add: C2_subset_exec)
+    apply (rule allI)
+  apply(rule impI)
+  apply(case_tac "5 \<in> C'")
+
+    
+    
+    sorry
     
 lemma refl2: "(a, b) \<in> r \<and> (b, c) \<in> r \<Longrightarrow> (a, c) \<in> r\<^sup>*"
   apply auto
@@ -295,9 +395,8 @@ theorem "well_justified jctc6 jctc6_exec \<and> {2, 5} \<subseteq> jctc6_exec"
   apply(simp add: well_justified_def)
   apply(simp add: jctc_isValid)
   apply(auto)
-     defer defer
-     apply(simp add: jctc6_exec_def)
-    apply(simp add: jctc6_exec_def)
-   apply(simp add: justified_def jctc6_reads jctc6_exec_def jctc6_def)
-  apply(simp add: jctc6_game)
+     apply(simp add: justified_def jctc6_reads jctc6_exec_def jctc6_def)
+    apply(simp add: jctc6_game)
+   apply(simp add: jctc6_exec_def)
+  apply(simp add: jctc6_exec_def)
   done

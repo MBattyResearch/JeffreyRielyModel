@@ -2,7 +2,7 @@ section {* Model *}
 text {* This is an implementation of Alan Jeffrey's Event Structure Memory Model in Isabelle/HOL. *}
   
 theory EventStructures
-imports Main Relation Transitive_Closure
+imports Main Relation Transitive_Closure RelationalLemmas
 begin
   
 subsection{* Basic Definitions *}
@@ -35,21 +35,11 @@ definition isValidPO :: "'a set \<Rightarrow> 'a rel \<Rightarrow> bool" where
   antisym po
 )"
 
-definition symmetric:: "'a rel \<Rightarrow> bool" where
-  "symmetric r \<equiv> \<forall>a b . (a, b) \<in> r \<longleftrightarrow> (b, a) \<in> r"
-
-definition symmetriccl:: "'a rel \<Rightarrow> 'a rel" where
-  "symmetriccl r \<equiv> {(y, x) . (x, y) \<in> r} \<union> r"
-  
-lemma symmetric_symmetriccl: "\<forall>r . symmetric (symmetriccl r)"
-  apply(simp add: symmetric_def symmetriccl_def)
-  by auto    
-  
 text{* A valid conflict relation is symetric and transitive. *}
 -- {* Should this be minus reflexive edges too? Mark is suspicious *}
 definition isConfValid :: "'a rel \<Rightarrow> bool" where
 "isConfValid conf \<equiv> (
-  symmetric conf \<and>
+  sym conf \<and>
   trans (conf \<union> Id) \<and>
   irrefl conf
 )"
@@ -119,14 +109,14 @@ definition down_closure :: "'a set \<Rightarrow> 'a event_structure \<Rightarrow
 definition justified :: "'a event_structure \<Rightarrow> 'a config \<Rightarrow> bool" where
 "justified es c \<equiv>
    (\<forall>r\<in> c. (getMemAction (label_function es r) = R) \<longrightarrow> 
-    (\<exists>e\<in>c. (justifies_event (label_function es e) (label_function es r))))
-"
+    (\<exists>e\<in>c. (justifies_event (label_function es e) (label_function es r))))"
+
+definition is_read :: "'a \<Rightarrow> 'a event_structure \<Rightarrow> bool" where
+  "is_read x es \<equiv> (getMemAction (label_function es x) = R)"
+  
 definition justifies_config :: "'a event_structure \<Rightarrow> 'a config rel" where
-  "justifies_config es \<equiv> 
-    { (c\<^sub>1, c\<^sub>2) . \<forall>x \<in> c\<^sub>2. \<exists>y \<in> c\<^sub>1. 
-      (getMemAction (label_function es x) = R) \<longrightarrow>
-      ((getMemAction (label_function es y) = W) \<or> (getMemAction (label_function es y) = I)) \<and>
-      (justifies_event (label_function es y) (label_function es x)) }"
+  "justifies_config es \<equiv> { (c\<^sub>1, c\<^sub>2) . \<forall>x \<in> c\<^sub>2. is_read x es \<longrightarrow> 
+  (\<exists>y \<in> c\<^sub>1. justifies_event (label_function es y) (label_function es x)) }"
 
 definition justifies_config_subset :: "'a event_structure \<Rightarrow> 'a config rel" where
   "justifies_config_subset es \<equiv> { (c\<^sub>1, c\<^sub>2) . (c\<^sub>1 \<subseteq> c\<^sub>2) \<and> (c\<^sub>1, c\<^sub>2) \<in> justifies_config es }"
@@ -152,12 +142,17 @@ definition well_justified :: "'a event_structure \<Rightarrow> 'a config  \<Righ
   {}\<sqsubseteq>\<^sup>*\<^bsub>es\<^esub>C"
 
 
-definition empty_ES :: "string event_structure" where
-"empty_ES \<equiv> \<lparr> 
+definition initialES :: "nat event_structure" ("\<I>" 1000) where
+"initialES \<equiv> \<lparr> 
   event_set = {},
   primitive_order ={},
   primitive_conflict = {},
   label_function = \<lambda>x.(Label I '''' 0)
 \<rparr>"
+
+definition initialConfig :: "nat set" ("\<C>" 1000) where
+  "initialConfig \<equiv> {}"
+
+declare initialConfig_def [simp]
 
 end
