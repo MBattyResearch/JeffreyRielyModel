@@ -1,5 +1,5 @@
 theory jctc6
-  imports EventStructures ExampleEventStructures ESProperties
+  imports EventStructures ESProperties
           String Relation Transitive_Closure 
 begin
 
@@ -46,13 +46,10 @@ lemma jctc6_valid_PO: "isValidPO (event_set jctc6) ((primitive_order jctc6)\<^su
 lemma jctc6_is_finite: "finite (event_set jctc6)"
   by (simp add: jctc6_def)
   
-
 lemma jctc6_symm_conflict: "sym ((symmetriccl (primitive_conflict jctc6))\<^sup>+ - Id)"
   apply(simp add: sym_def)
   apply (meson symm_pc sym_def)
   done
-    
-
     
 lemma jctc6_is_conf_valid: "isConfValid ((symmetriccl (primitive_conflict jctc6))\<^sup>+ - Id)"
   apply(simp add: isConfValid_def jctc6_symm_conflict trans_rtrancl)
@@ -83,9 +80,6 @@ lemma trancl_pc_subset_constructed_pc_id: "((symmetriccl (primitive_conflict jct
     apply (simp_all add: jctc6_def constructed_pc_def symmetriccl_def)
   apply(auto)
   done
-
-lemma alg_subset: "a \<subseteq> c \<union> b \<Longrightarrow> a - b \<subseteq> c"
-  by auto
 
 lemma pc_subset_constructed_pc: "((symmetriccl (primitive_conflict jctc6))\<^sup>+ - Id) \<subseteq> constructed_pc"
   apply(rule alg_subset)
@@ -122,42 +116,10 @@ definition jctc6_exec:: "nat set" where
 definition jctc6_C2:: "nat set" where
   "jctc6_C2 \<equiv> {1,2,3}"
   
-lemma ae_justifies_refl[simp]: "C \<lesssim>\<^sup>*\<^bsub>es\<^esub> C"
-  apply(simp add: justifies_config_star_inf_def)
-  done
-    
 theorem jctc6_reads: "(getMemAction (label_function jctc6 r) = R) = (r \<in> {4,7,2,5})"
   apply(simp add:jctc6_def)
   done   
-        
-lemma rtrancl_eq_Id_trancl: "r\<^sup>* = Id \<union> r\<^sup>+"
-  by (simp add: Nitpick.rtrancl_unfold Un_commute)
 
--- {* For every step of adding something to C' we have that the previous steps are included, so any
-      "dependants" remain.
-      Mark: in the final step (C_0,C') , all reads in C' are justified by C_0, and C_0 is a subset,
-      so all reads in C' are justified by writes in C'. *}
-lemma aejrefl_and_aejstar_imp_aej: "C \<lesssim>\<^bsub>es\<^esub> C \<Longrightarrow> C \<lesssim>\<^sup>*\<^bsub>es\<^esub> C' \<Longrightarrow> C' \<lesssim>\<^bsub>es\<^esub> C'"
-  apply(simp add: justifies_config_star_inf_def)
-  apply(simp add: rtrancl_eq_Id_trancl)
-    apply(erule disjE)
-   apply(simp_all)
-  apply(simp add: trancl_unfold_right)
-  apply(simp add: justifies_config_subset_def justifies_config_def)
-  apply clarsimp
-  apply(rename_tac "C\<^sub>0")
-  apply(simp add: justifies_config_inf_def justifies_config_subset_def justifies_config_def)
-  apply(rule ballI)
-  apply blast
-  done
-     
-     
-lemma just_star_imp_just: "\<C> \<lesssim>\<^sup>*\<^bsub>es\<^esub> C' \<Longrightarrow> C' \<lesssim>\<^bsub>es\<^esub> C'"
-  apply(rule aejrefl_and_aejstar_imp_aej [where C=\<C>])
-   apply(simp add: emptyESJustEmptyES)
-  apply(assumption)
-  done
-    
 lemma not_read_1[simp]: "\<not>(getMemAction (label_function jctc6 (Suc 0)) = R)"
   apply(simp add: jctc6_def)
   done
