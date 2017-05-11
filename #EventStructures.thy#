@@ -69,22 +69,20 @@ context labelledES
     (*All read events in a configuration are justified by an event in that configuration*)
     definition justified :: "'a config \<Rightarrow> bool" where
     "justified c \<equiv>
-       (\<forall>r\<in> c. (getMemAction (label_function es r) = R) \<longrightarrow> 
-        (\<exists>e\<in>c. (justifies_event (label_function es e) (label_function es r))))"
+       (\<forall>r\<in> c. (getMemAction (label r) = R) \<longrightarrow> 
+        (\<exists>e\<in>c. (justifies_event (label e) (label r))))"
     
     definition is_read :: "'a \<Rightarrow> bool" where
-      "is_read x \<equiv> (getMemAction (label_function es x) = R)"
+      "is_read x \<equiv> (getMemAction (label x) = R)"
 
     definition justifies_config :: "'a config \<Rightarrow> 'a config \<Rightarrow> bool"  where
-      "justifies_config A B \<equiv> \<forall>x \<in> B. is_read x \<longrightarrow> (\<exists>y \<in> A. justifies_event (label_function es y) (label_function es x))"
+      "justifies_config A B \<equiv> \<forall>x \<in> B. is_read x \<longrightarrow> (\<exists>y \<in> A. justifies_event (label y) (label x))"
 
     definition justifies_config_subset :: "'a config \<Rightarrow> 'a config \<Rightarrow> bool" (infixl "\<lesssim>" 60) where
       "justifies_config_subset A B  \<equiv> A \<subseteq> B \<and> justifies_config A B"
 
     definition justifies_config_star ::  "'a config \<Rightarrow> 'a config \<Rightarrow> bool" (infixl "\<lesssim>\<^sup>*" 60) where
         "justifies_config_star a b \<equiv> justifies_config_subset\<^sup>*\<^sup>* a b"
-
-value \<CC>
       
     definition ae_justifies :: "'a config  \<Rightarrow> 'a config \<Rightarrow> bool" where
       "ae_justifies C D \<equiv> \<forall>C' \<in> \<CC>. (C \<lesssim>\<^sup>* C') \<longrightarrow> (\<exists>C'' \<in> \<CC>. (C' \<lesssim>\<^sup>* C'') \<and> justifies_config C'' D)"
@@ -98,6 +96,7 @@ value \<CC>
     definition well_justified :: "'a config  \<Rightarrow> bool" where
       "well_justified C \<equiv> (justified C) \<and> C \<in> \<CC> \<and> {}\<sqsubseteq>\<^sup>*C"
     
+(* This needs to be re-done in some other format. who knows what.
     definition initialES :: "nat event_structure" ("\<I>" 1000) where
     "initialES \<equiv> \<lparr> 
       event_set = {},
@@ -105,14 +104,11 @@ value \<CC>
       primitive_conflict = {},
       label_function = \<lambda>x.(Label I '''' 0)
     \<rparr>"
-    
+  *)  
     definition initialConfig :: "nat set" ("\<C>" 1000) where
       "initialConfig \<equiv> {}"
     
     declare initialConfig_def [simp]
-    end
-
-locale config = event_structures +
- 
+  end
 
 end
