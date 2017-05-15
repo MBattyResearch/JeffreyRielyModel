@@ -22,6 +22,12 @@ lemma symm_imp_symm_trancl: "sym r \<longrightarrow> sym (r\<^sup>+)"
 lemma symm_pc: "sym ((symmetriccl r)\<^sup>+)"
   apply(simp add: sym_def)
   by (meson  symm_imp_symm_trancl sym_def symmetric_symmetriccl)
+        
+lemma rtrancl_eq_Id_trancl: "r\<^sup>* = Id \<union> r\<^sup>+"
+  by (simp add: Nitpick.rtrancl_unfold Un_commute)
+
+lemma alg_subset: "a \<subseteq> c \<union> b \<Longrightarrow> a - b \<subseteq> c"
+  by auto
 
 end
   
