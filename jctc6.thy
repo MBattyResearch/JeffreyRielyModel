@@ -213,7 +213,7 @@ lemma add_7_8_allowed: "{} \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C \<Longright
 text {* We want to case split on C', if C' contains a write from which we can justify 2 then we're 
 good and don't need to add anything to C''. Otherwise we need to add a write like 6 or 8. 
 There's no move for C' which doesn't allow adding 6 or 8 to the C'' set. *}
-theorem round_1: "({}, jctc6_C2) \<in> {(c\<^sub>1, c\<^sub>2). c\<^sub>1 \<sqsubseteq>\<^bsub>jctc6\<^esub> c\<^sub>2}"
+theorem round_1: "{} \<sqsubseteq>\<^bsub>jctc6\<^esub> jctc6_C2"
   apply(simp add: ae_justifies_subset_def ae_justifies_def)
   apply (rule allI)
   apply(rule impI)
@@ -295,40 +295,77 @@ lemma foo: "jctc6_C2 \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C' \<Longrightarrow
   apply(simp add: jctc6_C2_def jctc6_exec_def)
   apply(rule_tac x=C' in exI)
   apply(rule conjI) 
-   prefer 2
+  apply(auto)[1]
    apply(rule conjI)
     apply(rule impI)
     apply(simp only: eight_just_2)
     apply(simp add: three_just_5)
-  apply(auto)[1]
   done
 
-lemma "x \<in> C' \<Longrightarrow> is_read x jctc6 \<Longrightarrow> \<exists>y\<in>C'. justifies_event (label_function jctc6 y) (label_function jctc6 x) \<Longrightarrow>    
-  (C', C') \<in> {(c\<^sub>1, c\<^sub>2). c\<^sub>1 \<subseteq> c\<^sub>2 \<and> (c\<^sub>1, c\<^sub>2) \<in> justifies_config jctc6}"
-  apply(simp add: justifies_config_def)
-  apply auto
-  apply(rule bexI)
-  try
-    oops
-
-    
-    
 lemma foo_two: "jctc6_C2 \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C' \<Longrightarrow> 5 \<in> C' \<Longrightarrow> 
     \<exists>C''. C' \<lesssim>\<^sup>*\<^bsub>jctc6\<^esub> C'' \<and> (C'', jctc6_exec) \<in> justifies_config jctc6"
   apply(rule_tac x="C\<union>{6}" in exI)
   apply(simp add: justifies_config_def)
     oops
     
+lemma justifies_config_infI: "C \<lesssim>\<^bsub>es\<^esub> C' \<Longrightarrow> (C, C') \<in> justifies_config es"
+  apply(simp add: justifies_config_inf_def)
+  apply(simp add: justifies_config_subset_def)
+  done
+      
+lemma test: "C \<subseteq> C' \<Longrightarrow> (C, C') \<in> justifies_config es \<or> (C, C') \<in> Id \<Longrightarrow> C \<lesssim>\<^sup>*\<^bsub>es\<^esub> C'"
+  apply(simp add: justifies_config_star_inf_def)
+  apply(simp add: justifies_config_subset_def)
+  apply(simp add: rtrancl_eq_Id_trancl)
+  apply auto
+  done
+    
+lemma six_just_2: "justifies_event (label_function jctc6 6) (label_function jctc6 2)"
+  apply(simp add: jctc6_def)
+  done
+    
+thm rtrancl_induct[where a=C, where b=D, where r="justifies_config_subset es"]
+  
+lemma just_imp_juststar: "C \<lesssim>\<^bsub>es\<^esub> D \<Longrightarrow> C \<lesssim>\<^sup>*\<^bsub>es\<^esub> D"
+  sorry
+    
+lemma subset: "C \<subseteq> D \<Longrightarrow> a \<in> C \<Longrightarrow> a \<in> D"
+  apply auto
+  done
+
 text {* Similar to the previous argument, whatever the opponent picks in C' we can always add a WA1 
 either with event 6 or 8. If 6 or 8 are in C' we can pick C'' = C' and have D, otherwise we must add
 one of them to C'' to get D *}
-theorem round_2: "(jctc6_C2, jctc6_exec) \<in> {(c\<^sub>1, c\<^sub>2). c\<^sub>1 \<sqsubseteq>\<^bsub>jctc6\<^esub> c\<^sub>2}"
+theorem round_2: "jctc6_C2 \<sqsubseteq>\<^bsub>jctc6\<^esub> jctc6_exec"
   apply(simp add: ae_justifies_def ae_justifies_subset_def)
     apply(simp add: C2_subset_exec)
     apply (rule allI)
   apply(rule impI)
   apply(case_tac "5 \<in> C'")
-
+   apply(rule_tac x="C'\<union>{6}" in exI)
+    apply(rule conjI) defer
+    apply(rule justifies_config_infI)
+    apply(simp only: justifies_config_inf_def justifies_config_subset_def)
+    apply(simp only: jctc6_C2_def jctc6_exec_def)
+    apply(simp add: justifies_config_def)
+  apply(rule conjI)
+     defer
+  apply(simp add: six_just_2)
+     apply(rule impI)
+    apply(rule disjI2)
+     apply(rule_tac x="3" in bexI)
+  apply(simp add: jctc6_def)
+     apply(rule subset[where C="{1,2,3}"])
+      apply(rule aej_subset[where es=jctc6])
+  apply simp
+     apply simp
+    defer
+  thm add_write_super_okay[where C=jctc6_C2, where C'=C', where ev=6]
+    thm aejrefl_and_aejstar_imp_aej[where es=jctc6, where C=jctc6_C2]
+      
+      
+    
+    
     
     
     sorry
@@ -348,8 +385,8 @@ theorem jctc6_game: "{} \<sqsubseteq>\<^sup>*\<^bsub>jctc6\<^esub> jctc6_exec"
   apply(simp add: ae_justifies_subset_star_def)
   apply(rule rounds)
   apply(rule conjI)
-  apply(rule round_1)
-  apply(rule round_2)
+  apply(simp add: round_1)
+  apply(simp add: round_2)
   done
 
   
