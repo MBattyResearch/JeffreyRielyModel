@@ -19,12 +19,21 @@ lemma symm_imp_symm_trancl: "sym r \<longrightarrow> sym (r\<^sup>+)"
    apply(meson trancl_into_trancl2)
   done
 
+
+
 lemma symm_pc: "sym ((symmetriccl r)\<^sup>+)"
   apply(simp add: sym_def)
   by (meson  symm_imp_symm_trancl sym_def symmetric_symmetriccl)
         
 lemma rtrancl_eq_Id_trancl: "r\<^sup>* = Id \<union> r\<^sup>+"
   by (simp add: Nitpick.rtrancl_unfold Un_commute)
+
+lemma rtranclp_eq_Id_trancl: "r\<^sup>*\<^sup>* = (\<lambda>x y . ((x, y) \<in> Id) \<or> r\<^sup>+\<^sup>+ x y)"
+  by (metis Nitpick.rtranclp_unfold pair_in_Id_conv)
+
+
+lemma tranclp_unfold_right: "r\<^sup>+\<^sup>+ = r\<^sup>*\<^sup>* OO r"
+sorry
 
 lemma alg_subset: "a \<subseteq> c \<union> b \<Longrightarrow> a - b \<subseteq> c"
   by auto
