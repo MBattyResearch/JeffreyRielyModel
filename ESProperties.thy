@@ -69,10 +69,19 @@ begin
     apply(simp add: justifies_config_def justifies_config_subset_def)
     apply blast
     done
+
+  theorem emptyESJustEmptyES: "{} \<lesssim> {}"
+    apply(auto simp add: justifies_config_def justifies_config_subset_def)
+    done
   
-  lemma just_star_imp_just: "\<C> \<lesssim>\<^sup>* C' \<Longrightarrow> C' \<lesssim> C'"
-    apply(rule aejrefl_and_aejstar_imp_aej [where C=\<C>])
-     apply(simp add: emptyESJustEmptyES)
+value \<C>
+
+thm aejrefl_and_aejstar_imp_aej[where C="{}"]
+
+  lemma just_star_imp_just: "{} \<lesssim>\<^sup>* C' \<Longrightarrow> C' \<lesssim> C'"
+    apply(rule aejrefl_and_aejstar_imp_aej)
+    apply(simp add: justifies_config_star_def justifies_config_def)
+     apply(rule emptyESJustEmptyES)
     apply(assumption)
     done
       
