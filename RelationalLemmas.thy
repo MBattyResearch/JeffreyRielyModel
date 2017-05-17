@@ -31,12 +31,15 @@ lemma rtrancl_eq_Id_trancl: "r\<^sup>* = Id \<union> r\<^sup>+"
 lemma rtranclp_eq_Id_trancl: "r\<^sup>*\<^sup>* = (\<lambda>x y . ((x, y) \<in> Id) \<or> r\<^sup>+\<^sup>+ x y)"
   by (metis Nitpick.rtranclp_unfold pair_in_Id_conv)
 
-
+  thm trancl_unfold_right
 lemma tranclp_unfold_right: "r\<^sup>+\<^sup>+ = r\<^sup>*\<^sup>* OO r"
 sorry
 
 lemma alg_subset: "a \<subseteq> c \<union> b \<Longrightarrow> a - b \<subseteq> c"
   by auto
-
+    
+definition build_conflict :: "'a rel \<Rightarrow> 'a rel \<Rightarrow> 'a rel" where
+  "build_conflict pc ord \<equiv> {(c,e) . \<forall>d . (c,d) \<in> pc \<and> (d,e) \<in> ord}"
+  
 end
   

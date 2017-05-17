@@ -3,16 +3,19 @@ imports Enum EventStructures Relation Transitive_Closure String
 begin
 
 interpretation emptyES: labelledES 
-  "\<lambda>x y . (x, y) \<in> {(1,1)}\<^sup>*"  -- Order
+  "{(1,1)}\<^sup>*"  -- Order
   "{1}" -- Events
-  "\<lambda>x y . (x, y) \<in> {}" -- Conflict
+  "{}" -- Conflict
   "\<lambda>x . Label I '''' 0" -- Labelling
   apply(unfold_locales) 
-         apply(auto)
-   apply (metis Domain_empty Domain_insert Not_Domain_rtrancl singleton_iff)
+      apply(auto)
+     apply(simp add: Transitive_Closure.refl_rtrancl)
+    apply(metis Domain_empty Domain_insert Not_Domain_rtrancl antisym_def singletonD)
+   apply(simp add: Transitive_Closure.trans_rtrancl)
+  apply(simp add: sym_def)
   done
       
-thm labelledES.well_justified_def    
+thm labelledES.well_justified_def
 thm labelledES.config_domain_def
 thm mem_Collect_eq[where P="\<lambda>C . emptyES.conflict_free C \<and> emptyES.down_closed C"]
   

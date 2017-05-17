@@ -3,6 +3,83 @@ theory jctc6
           String Relation Transitive_Closure 
 begin
 
+definition event_set :: "nat set" where
+  "event_set \<equiv> { 1, 2, 3, 4, 5, 6, 7, 8 }"
+  
+definition min_order :: "nat rel" where
+  "min_order \<equiv> { (1, 7), (1, 5), (1, 4), (1, 2), (7, 8), (2, 3), (5, 6) }"
+  
+definition order :: "nat rel" where
+  "order \<equiv> { (6, 6), (3, 3), (1, 8), (1, 7), (1, 6), (1, 5), (1, 4), (1, 3), (1, 2), 
+              (1, 1), (8, 8), (7, 8), (7, 7), (2, 3), (2, 2), (4, 4), (5, 6), (5, 5) }\<^sup>*"
+
+definition primitive_conflict :: "nat rel" where
+  "primitive_conflict \<equiv> { (2, 4), (4, 2), (5, 7), (7, 5) }"
+
+definition conflict :: "nat rel" where
+  "conflict \<equiv> build_conflict primitive_conflict order"
+   (*   
+lemma trancl_pc_subset_constructed_pc_id: "((symmetriccl (min_prim_conflict))\<^sup>+) \<subseteq> constructed_pc \<union> Id"
+  apply(rule subrelI)
+  apply(rule trancl.induct [where ?P = "\<lambda>x y. (x,y) \<in> constructed_pc \<union> Id"])
+    apply (simp_all add: constructed_pc_def symmetriccl_def)
+  apply(simp_all add: min_prim_conflict_def)
+  apply(auto)
+  done
+
+lemma pc_subset_constructed_pc: "((symmetriccl (min_prim_conflict))\<^sup>+ - Id) \<subseteq> constructed_pc"
+  apply(rule alg_subset)
+  apply(rule trancl_pc_subset_constructed_pc_id)
+  done
+    
+lemma constructed_pc_subset_pc: "constructed_pc \<subseteq> ((symmetriccl (min_prim_conflict))\<^sup>+ - Id)"
+  apply(rule subrelI)
+  apply(simp add: symmetriccl_def constructed_pc_def)
+  apply(simp add: min_prim_conflict_def)
+  apply auto
+  done
+    
+lemma constructed_pc_correct: "((symmetriccl (min_prim_conflict))\<^sup>+ - Id) = constructed_pc"
+  apply(rule equalityI constructed_pc_subset_pc pc_subset_constructed_pc)+
+  done
+*)
+
+interpretation jctc6: labelledES 
+  "order"
+  "event_set"
+  "conflict" -- Conflict
+  "\<lambda>x.  if x = 2 then Label R ''A'' 1 (* r1 *)
+        else if x = 3 then Label W ''B'' 1
+        else if x = 4 then Label R ''A'' 0 (* r1 *)
+        else if x = 5 then Label R ''B'' 1 (* r2 *)
+        else if x = 6 then Label W ''A'' 1
+        else if x = 7 then Label R ''B'' 0 (* r2 *)
+        else if x = 8 then Label W ''A'' 1
+        else Label I '''' 0" -- Label
+  apply(unfold_locales)
+      apply(simp only: order_def)
+      apply(rule Transitive_Closure.refl_rtrancl)
+        apply(simp only: order_def)
+     defer
+  apply(simp only: order_def)
+     apply(rule Transitive_Closure.trans_rtrancl)
+    apply(simp only: conflict_def)
+    apply(simp add: build_conflict_def)
+
+    using trans_rtrancl apply auto[1]
+      apply (simp add: build_conflict_def symmetric_symmetriccl)
+    apply(simp add: sym_def)
+      apply (meson symm_pc sym_def)
+     apply(simp only: build_conflict_def)
+     apply(simp only: constructed_pc_correct)
+     apply(simp only: constructed_pc_def)
+     apply(simp only: min_order_def)
+      try
+      
+     apply(simp only: build_pc_def symmetriccl_def)
+      
+      
+  
 definition jctc6 :: "nat event_structure" where
 "jctc6 \<equiv> \<lparr>
     event_set = { 1, 2, 3, 4, 5, 6, 7, 8 },
@@ -32,7 +109,7 @@ lemma jctc6_acyc_po: "acyclic (primitive_order jctc6)"
   apply(simp add: jctc6_def)
   apply(auto)
         apply(simp add: acyclic_def)
-       apply(rule rtrancl.cases, auto)+
+     (*  apply(rule rtrancl.cases, auto)*)
   done
 
 lemma jctc6_valid_PO: "isValidPO (event_set jctc6) ((primitive_order jctc6)\<^sup>*)"

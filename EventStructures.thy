@@ -60,8 +60,15 @@ context labelledES
       "justified c \<equiv> (\<forall>r\<in> c. (getMemAction (label r) = R) \<longrightarrow> 
         (\<exists>e\<in>c. (justifies_event (label e) (label r))))"
     
+    definition prec :: "'a \<Rightarrow> 'a \<Rightarrow> bool" (infixl "\<preceq>" 50) where 
+      "prec x y \<equiv> (x, y) \<in> preceeds"
+    declare prec_def[simp]
+  
+    definition conf :: "'a \<Rightarrow> 'a \<Rightarrow> bool" ("#" 50) where
+      "conf x y \<equiv> (x, y) \<in> conflict"
+      
     definition conflict_free :: "'a config \<Rightarrow> bool" where
-      "conflict_free C \<equiv> \<forall>x y. x \<in> C \<and> y \<in> C \<longrightarrow> \<not> conflict x y"
+      "conflict_free C \<equiv> \<forall>x y. x \<in> C \<and> y \<in> C \<longrightarrow> \<not> conf x y"
       
     definition down_closed :: "'a config \<Rightarrow> bool" where
       "down_closed C \<equiv> \<forall>x y . x \<in> C \<and> y \<preceq> x \<longrightarrow> y \<in> C"
