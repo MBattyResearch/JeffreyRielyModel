@@ -1,8 +1,30 @@
 theory jctc4
   imports EventStructures ExampleEventStructures 
-          String Relation Transitive_Closure jctc6 ESProperties
+          String Relation Transitive_Closure jctc6 ESProperties EventStructures2
 begin
 
+interpretation jctc4: labelledES 
+  "{{ (6, 7), (1, 8), (1, 6), (1, 4), (1, 2), (8, 9), (2, 3), (4, 5) }*"  -- Order
+  "{1, 2, 3, 4, 5, 6, 7, 8, 9}" -- Events
+  "(x, y) \<in> { (6, 8), (2, 4) }" -- Conflict
+  "\<lambda>x. if x = 2 then Label R ''x'' 1 (* r1 *)
+    else if x = 3 then Label W ''y'' 1
+    else if x = 4 then Label R ''x'' 0 (* r1 *)
+    else if x = 5 then Label W ''y'' 0
+    else if x = 6 then Label R ''y'' 1 (* r2 *)
+    else if x = 7 then Label W ''x'' 1
+    else if x = 8 then Label R ''y'' 0 (* r2 *)
+    else if x = 9 then Label W ''x'' 0
+    else Label I '''' 0" -- Labelling
+
+  apply(unfold_locales) 
+  apply(auto)
+   apply (metis Domain_empty Domain_insert Not_Domain_rtrancl singleton_iff)
+  done
+
+
+
+(**
 definition jctc4 :: "nat event_structure" where
 "jctc4 \<equiv> \<lparr> 
     event_set = { 1, 2, 3, 4, 5, 6, 7, 8, 9 },
@@ -221,6 +243,6 @@ theorem "\<not>(well_justified jctc4 jctc4_goal)"
   apply(simp add: justified_def)
 oops
 
-
+**)
 
 end

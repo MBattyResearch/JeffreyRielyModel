@@ -10,14 +10,14 @@ definition min_order :: "nat rel" where
   "min_order \<equiv> { (1, 7), (1, 5), (1, 4), (1, 2), (7, 8), (2, 3), (5, 6) }"
   
 definition order :: "nat rel" where
-  "order \<equiv> { (6, 6), (3, 3), (1, 8), (1, 7), (1, 6), (1, 5), (1, 4), (1, 3), (1, 2), 
-              (1, 1), (8, 8), (7, 8), (7, 7), (2, 3), (2, 2), (4, 4), (5, 6), (5, 5) }\<^sup>*"
+  "order \<equiv> { (1, 8), (1, 7), (1, 6), (1, 5), (1, 4), (1, 3), (1, 2), (7, 8), (2, 3), (5, 6) }\<^sup>*"
 
 definition primitive_conflict :: "nat rel" where
   "primitive_conflict \<equiv> { (2, 4), (4, 2), (5, 7), (7, 5) }"
 
 definition conflict :: "nat rel" where
   "conflict \<equiv> build_conflict primitive_conflict order"
+
    (*   
 lemma trancl_pc_subset_constructed_pc_id: "((symmetriccl (min_prim_conflict))\<^sup>+) \<subseteq> constructed_pc \<union> Id"
   apply(rule subrelI)
@@ -44,6 +44,8 @@ lemma constructed_pc_correct: "((symmetriccl (min_prim_conflict))\<^sup>+ - Id) 
   done
 *)
 
+
+
 interpretation jctc6: labelledES 
   "order"
   "event_set"
@@ -65,6 +67,16 @@ interpretation jctc6: labelledES
      apply(rule Transitive_Closure.trans_rtrancl)
     apply(simp only: conflict_def)
     apply(simp add: build_conflict_def)
+    apply(simp add: symmetric_symmetriccl)
+    apply(simp add: conflict_def)
+    apply(simp only: build_conflict_def) 
+    apply(simp add: symmetriccl_def primitive_conflict_def order_def)
+    apply(smt numeral_eq_iff semiring_norm(89))
+    apply(rule Transitive_Closure.acyclic_impl_antisym_rtrancl)
+
+
+
+
 
     using trans_rtrancl apply auto[1]
       apply (simp add: build_conflict_def symmetric_symmetriccl)
@@ -74,7 +86,6 @@ interpretation jctc6: labelledES
      apply(simp only: constructed_pc_correct)
      apply(simp only: constructed_pc_def)
      apply(simp only: min_order_def)
-      try
       
      apply(simp only: build_pc_def symmetriccl_def)
       

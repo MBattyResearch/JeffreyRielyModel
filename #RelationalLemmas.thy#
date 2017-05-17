@@ -40,6 +40,8 @@ lemma alg_subset: "a \<subseteq> c \<union> b \<Longrightarrow> a - b \<subseteq
     
 definition build_conflict :: "'a rel \<Rightarrow> 'a rel \<Rightarrow> 'a rel" where
   "build_conflict pc ord \<equiv> symmetriccl {(c,e) . \<forall>d . (c,d) \<in> pc \<and> (d,e) \<in> ord}"
+
+
   
 end
   
