@@ -73,10 +73,6 @@ begin
   theorem emptyESJustEmptyES: "{} \<lesssim> {}"
     apply(auto simp add: justifies_config_def justifies_config_subset_def)
     done
-  
-value \<C>
-
-thm aejrefl_and_aejstar_imp_aej[where C="{}"]
 
   lemma just_star_imp_just: "{} \<lesssim>\<^sup>* C' \<Longrightarrow> C' \<lesssim> C'"
     apply(rule aejrefl_and_aejstar_imp_aej)

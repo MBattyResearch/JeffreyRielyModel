@@ -45,20 +45,26 @@ fun justifies_event :: "label \<Rightarrow> label \<Rightarrow> bool" where
 "justifies_event x (Label I l v) = True"|*)
 "justifies_event x y = False"
 
-definition conflict_free :: "'a config \<Rightarrow> 'a rel \<Rightarrow> bool" where
-"conflict_free c conf \<equiv> (\<forall>e\<in>c. \<not>(\<exists>f\<in>c. (e, f) \<in> conf))"
+
 
 (*Helper function to get the type of memory action from an event label*)
 fun getMemAction :: "label \<Rightarrow> mem_action" where
 "getMemAction (Label x _ _) = x"
 
+print_locale labelledES
+
 context labelledES
   begin     
     (*All read events in a configuration are justified by an event in that configuration*)
     definition justified :: "'a config \<Rightarrow> bool" where
-    "justified c \<equiv>
-       (\<forall>r\<in> c. (getMemAction (label r) = R) \<longrightarrow> 
+      "justified c \<equiv> (\<forall>r\<in> c. (getMemAction (label r) = R) \<longrightarrow> 
         (\<exists>e\<in>c. (justifies_event (label e) (label r))))"
+    
+    definition conflict_free :: "'a config \<Rightarrow> bool" where
+      "conflict_free C \<equiv> \<forall>x y. x \<in> C \<and> y \<in> C \<longrightarrow> \<not> conflict x y"
+      
+    definition down_closed :: "'a config \<Rightarrow> bool" where
+      "down_closed C \<equiv> \<forall>x y . x \<in> C \<and> y \<preceq> x \<longrightarrow> y \<in> C"
     
     definition is_read :: "'a \<Rightarrow> bool" where
       "is_read x \<equiv> (getMemAction (label x) = R)"
@@ -70,8 +76,11 @@ context labelledES
       "justifies_config_subset A B  \<equiv> A \<subseteq> B \<and> justifies_config A B"
 
     definition justifies_config_star ::  "'a config \<Rightarrow> 'a config \<Rightarrow> bool" (infixl "\<lesssim>\<^sup>*" 60) where
-        "justifies_config_star a b \<equiv> justifies_config_subset\<^sup>*\<^sup>* a b"
+      "justifies_config_star a b \<equiv> justifies_config_subset\<^sup>*\<^sup>* a b"
       
+    definition config_domain :: "'a config set" ("\<CC>") where
+      "config_domain \<equiv> {C . conflict_free C \<and> down_closed C}"       
+        
     definition ae_justifies :: "'a config  \<Rightarrow> 'a config \<Rightarrow> bool" where
       "ae_justifies C D \<equiv> \<forall>C' \<in> \<CC>. (C \<lesssim>\<^sup>* C') \<longrightarrow> (\<exists>C'' \<in> \<CC>. (C' \<lesssim>\<^sup>* C'') \<and> justifies_config C'' D)"
       
@@ -84,10 +93,9 @@ context labelledES
     definition well_justified :: "'a config  \<Rightarrow> bool" where
       "well_justified C \<equiv> (justified C) \<and> C \<in> \<CC> \<and> {}\<sqsubseteq>\<^sup>*C"
     
-    definition initialConfig :: "nat set" ("\<C>" 1000) where
+    definition initialConfig :: "'a set" ("\<C>" 1000) where
       "initialConfig \<equiv> {}"
-    
+                                         
     declare initialConfig_def [simp]
   end
-
 end
