@@ -10,7 +10,7 @@ begin
     apply(simp add: justifies_config_star_def)
     done
   
-  lemma aej_subset: "C \<lesssim>\<^sup>* D \<Longrightarrow> C \<subseteq> D"
+  lemma justifies_config_subset_star_subset: "C \<lesssim>\<^sup>* D \<Longrightarrow> C \<subseteq> D"
     apply(simp only: justifies_config_star_def)
     apply(rule rtranclp_induct[where a=C, where b=D, where r="justifies_config_subset", 
           where P="\<lambda>x . C \<subseteq> x"])
