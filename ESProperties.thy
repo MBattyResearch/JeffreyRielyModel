@@ -92,6 +92,18 @@ begin
   lemma just_config_star_splitR: "A \<lesssim> B \<Longrightarrow> B \<lesssim>\<^sup>* C \<Longrightarrow> A \<lesssim>\<^sup>* C"    
     apply(simp add: justifies_config_star_def justifies_config_def)
     done
+      
+  lemma game_split: "A \<sqsubseteq> B \<Longrightarrow> B \<sqsubseteq> C \<Longrightarrow> A \<sqsubseteq>\<^sup>* C"
+    apply(simp add: ae_justifies_subset_star_def)
+    done
+      
+  lemma game_splitL: "A \<sqsubseteq>\<^sup>* B \<Longrightarrow> B \<sqsubseteq> C \<Longrightarrow> A \<sqsubseteq>\<^sup>* C"
+    apply(simp add: ae_justifies_subset_star_def)
+    done
+      
+  lemma game_splitR: "A \<sqsubseteq> B \<Longrightarrow> B \<sqsubseteq>\<^sup>* C \<Longrightarrow> A \<sqsubseteq>\<^sup>* C"
+    apply(simp add: ae_justifies_subset_star_def)
+    done
 
-  end
+end
 end

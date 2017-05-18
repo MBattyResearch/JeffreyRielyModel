@@ -10,13 +10,19 @@ definition min_order :: "nat rel" where
   "min_order \<equiv> { (1, 7), (1, 5), (1, 4), (1, 2), (7, 8), (2, 3), (5, 6) }"
   
 definition order :: "nat rel" where
-  "order \<equiv> { (1, 8), (1, 7), (1, 6), (1, 5), (1, 4), (1, 3), (1, 2), (7, 8), (2, 3), (5, 6) }\<^sup>*"
+  "order \<equiv> { (1, 8), (1, 7), (1, 6), (1, 5), (1, 4), (1, 3), (1, 2), (7, 8), (2, 3), (5, 6) } \<union> Id"
 
 definition primitive_conflict :: "nat rel" where
   "primitive_conflict \<equiv> { (2, 4), (4, 2), (5, 7), (7, 5) }"
-
+  
+  
+(*
 definition conflict :: "nat rel" where
   "conflict \<equiv> build_conflict primitive_conflict order"
+*)
+  
+definition conflict :: "nat rel" where
+"conflict \<equiv> { (4, 3), (4, 2), (2, 4), (3, 4), (8, 6), (8, 5), (7, 6), (7, 5), (5, 7), (5, 8), (6, 7), (6, 8) }"
 
 interpretation jctc6 : labelledES 
   "order"
@@ -31,34 +37,71 @@ interpretation jctc6 : labelledES
         else if x = 8 then Label W ''A'' 1
         else Label I '''' 0" -- Label
   apply(unfold_locales)
-      apply(simp only: order_def)
-      apply(rule Transitive_Closure.refl_rtrancl)
-        apply(simp only: order_def)
-     defer
+      apply(simp only: order_def refl_reflcl)
+  apply(simp add: antisym_def order_def)
   apply(simp only: order_def)
-     apply(rule Transitive_Closure.trans_rtrancl)
-    apply(simp only: conflict_def)
-    apply(simp add: build_conflict_def)
-    apply(simp add: symmetric_symmetriccl)
-    apply(simp add: conflict_def)
-    apply(simp only: build_conflict_def) 
-    apply(simp add: symmetriccl_def primitive_conflict_def order_def)
-    apply(smt numeral_eq_iff semiring_norm(89))
-  apply(rule Transitive_Closure.acyclic_impl_antisym_rtrancl)
-  apply(simp add: acyclic_def)
-  apply (auto dest!: tranclD) (* thanks to StackOverflow *)
-  (* This proof is a little slow *)
-  apply (smt converse_rtranclE insert_iff num.inject(1) numeral_1_eq_Suc_0 numeral_eq_iff prod.inject 
-          semiring_norm(85) semiring_norm(86) semiring_norm(89) singletonD)+
+     apply(rule trans_reflclI)
+     apply(simp add: trans_def)
+    apply(simp add: sym_def conflict_def)
+   apply(simp add: order_def conflict_def)
+  apply (smt num.inject(1) numeral_1_eq_Suc_0 numeral_eq_iff semiring_norm(85) semiring_norm(86) semiring_norm(89) semiring_norm(90))
   done
-
 
 definition jctc6_exec:: "nat set" where
   "jctc6_exec \<equiv> {1,2,3,5,6}"
 
 definition jctc6_C2:: "nat set" where
   "jctc6_C2 \<equiv> {1,2,3}"
+thm rtranclD
   
+lemma round1: "jctc6.ae_justifies_subset {} jctc6_C2"
+  apply(simp add: jctc6.ae_justifies_subset_def jctc6.ae_justifies_def)
+  apply (rule ballI)
+  apply(rule impI)
+  apply(case_tac "6 \<in> C' \<or> 8 \<in> C'")
+  apply(rule_tac x=C' in bexI)
+    -- {* We have the cases for C' now. Let's dispatch the first where we don't need to add 
+          anything to C''*}
+    -- {* When 6 is in C', we can pick C'' = C' and always add 5 to D *}
+    apply(rule conjI)
+    apply(simp add: jctc6.justifies_config_star_def)
+   apply(simp add: jctc6.justifies_config_def)
+    apply(simp add: jctc6_C2_def jctc6.is_read_def)
+  using numeral_eq_iff apply blast
+   apply(assumption)
+    
+        -- {* This handles the 6 \<in> C'' case. 6 can justify 2 so we're good to proceed. *}
+    apply(rule_tac x=6 in bexI)
+     apply(simp add: jctc6_def)
+     apply(assumption)
+    
+    -- {* This handles the 8 \<in> C'' case. 8 can justify 2 so we're good to proceed. *}
+    apply(rule_tac x=8 in bexI)
+     apply(simp add: jctc6_def)
+    apply(assumption)
+    
+    apply auto[1]
+    -- {* This is the 6 in C' case done \o/ *}
+    
+  -- {* If 5 is in C' we may add 6 *}
+  apply(case_tac "5 \<in> C'")
+   apply(rule_tac x="C'\<union>{6}" in exI)
+   apply(simp add: write_add_justified)
+    
+  -- {* If 5 is not in C' we can add 7 and 8 as they're not in conflict. This gets us towards our 
+        goal. Adding 7 is justified by the init, and adding 8 is justified because 8 is a write. *}
+  apply(rule_tac x="C'\<union>{1,7,8}" in exI)
+  apply(rule conjI)
+   apply(rule add_7_8_allowed, assumption+)
+  apply(rule add_7_8_justified, assumption+)
+  done
+
+
+  
+lemma aej_jctc6_exec: "jctc6.ae_justifies_subset_star {} jctc6_exec"
+  apply(rule jctc6.game_split[where ?B=jctc6_C2])
+  sorry
+    
 theorem "jctc6.well_justified jctc6_exec"
   apply(unfold jctc6.well_justified_def)
   apply(rule conjI)
@@ -68,13 +111,15 @@ theorem "jctc6.well_justified jctc6_exec"
    apply(simp add: jctc6.config_domain_def)
   apply(rule conjI)
     apply(simp add: jctc6.conflict_free_def)
-    apply(auto simp add: jctc6.conf_def jctc6.conflict_def)[1]
-    apply(simp add: build_conflict_def)
-    apply(simp add: symmetriccl_def)
-    apply(auto simp add: primitive_conflict_def order_def jctc6_exec_def)[1]
-    try
+    apply(auto simp add: jctc6.conflict_def jctc6_exec_def)[1]
+   apply(simp add: jctc6.down_closed_def)
+   apply(simp add: jctc6_exec_def order_def)
+   apply(rule allI)+
+   apply(rule impI)
+   apply(auto)[1]
+  apply(rule aej_jctc6_exec)
+  done
     
-  
 theorem jctc6_reads: "(getMemAction (label r) = R) = (r \<in> {4,7,2,5})"
   apply(simp add: jctc6.label)
   done

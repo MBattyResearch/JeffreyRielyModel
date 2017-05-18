@@ -66,6 +66,7 @@ context labelledES
   
     definition conf :: "event \<Rightarrow> event \<Rightarrow> bool" ("#" 50) where
       "conf x y \<equiv> (x, y) \<in> conflict"
+    declare conf_def[simp]
       
     definition conflict_free :: "event config \<Rightarrow> bool" where
       "conflict_free C \<equiv> \<forall>x y. x \<in> C \<and> y \<in> C \<longrightarrow> \<not> conf x y"
