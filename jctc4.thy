@@ -3,10 +3,23 @@ theory jctc4
           String Relation Transitive_Closure jctc6 ESProperties EventStructures2
 begin
 
+definition event_set :: "nat set" where
+  "event_set \<equiv> {1, 2, 3, 4, 5, 6, 7, 8, 9}"
+  
+definition order :: "nat rel" where
+  "order \<equiv> { (6, 7), (1, 9), (1, 8), (1, 7), (1, 6), (1, 5), (1, 4), 
+            (1, 3), (1, 2), (8, 9), (2, 3), (4, 5) } \<union> Id"
+
+definition primitive_conflict :: "nat rel" where
+  "primitive_conflict \<equiv> { (6, 8), (8, 6), (2, 4), (4, 2) }"
+
+definition conflict :: "nat rel" where
+  "conflict \<equiv> { (5, 3), (5, 2), (4, 3), (4, 2), (2, 4), (2, 5), (3, 4), (3, 5), (9, 7), (9, 6), (8, 7), (8, 6), (6, 8), (6, 9), (7, 8), (7, 9) }"
+
 interpretation jctc4: labelledES 
-  "{{ (6, 7), (1, 8), (1, 6), (1, 4), (1, 2), (8, 9), (2, 3), (4, 5) }*"  -- Order
-  "{1, 2, 3, 4, 5, 6, 7, 8, 9}" -- Events
-  "(x, y) \<in> { (6, 8), (2, 4) }" -- Conflict
+  "order"  -- Order
+  "event_set" -- Events
+  "conflict" -- Conflict
   "\<lambda>x. if x = 2 then Label R ''x'' 1 (* r1 *)
     else if x = 3 then Label W ''y'' 1
     else if x = 4 then Label R ''x'' 0 (* r1 *)
@@ -16,11 +29,17 @@ interpretation jctc4: labelledES
     else if x = 8 then Label R ''y'' 0 (* r2 *)
     else if x = 9 then Label W ''x'' 0
     else Label I '''' 0" -- Labelling
-
-  apply(unfold_locales) 
-  apply(auto)
-   apply (metis Domain_empty Domain_insert Not_Domain_rtrancl singleton_iff)
+  apply(unfold_locales)
+      apply(simp only: order_def refl_reflcl)
+  apply(simp add: antisym_def order_def)
+  apply(simp only: order_def)
+     apply(rule trans_reflclI)
+     apply(simp add: trans_def)
+    apply(simp add: sym_def conflict_def)
+   apply(simp add: order_def conflict_def)
+  apply (smt num.inject(1) numeral_1_eq_Suc_0 numeral_eq_iff semiring_norm(85) semiring_norm(86) semiring_norm(89) semiring_norm(90))
   done
+
 
 
 
