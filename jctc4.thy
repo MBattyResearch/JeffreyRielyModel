@@ -90,6 +90,23 @@ lemma no_progress_from_blocking : "jctc4.justifies_config_star blocking_config C
   apply(simp add: jctc4.justifies_config_def jctc4.is_read_def)
 done
 
+lemma blocking_is_maximal : "jctc4.is_maximal jctc4.event_set jctc4.blocking_config"
+  apply(simp add: jctc4.is_maximal_def)
+  apply(simp add: blocking_config_def event_set_def)
+  done
+
+lemma no_more_events_in_maximal_configs : "\<forall>C\<in>jctc4.config_domain. jctc4.is_maximal jctc4.event_set C \<Longrightarrow> \<not>(\<exists>e\<in>jctc4.event_set. (C \<union> {e}) \<in> jctc4.config_domain)"
+  apply(simp add: jctc4.is_maximal_def)
+  nitpick
+
+lemma "\<forall>C\<in>jctc4.config_domain. \<forall>C'\<in>jctc4.config_domain. jctc4.is_maximal jctc4.event_set C 
+  \<Longrightarrow> jctc4.justifies_config_star C C' \<Longrightarrow> C = C'"
+  apply(rule)
+  apply (simp add: jctc4.justifies_config_star_def jctc4.justifies_config_subset_star_subset) 
+  apply(simp add: jctc4.is_maximal_def jctc4.justifies_config_star_def)
+  apply(rule ccontr)
+sorry
+  
 lemma blocking_just_self_only : "jctc4.justifies_config_star blocking_config C \<Longrightarrow> C = blocking_config"
   apply(simp add: jctc4.justifies_config_star_def)
   apply(rule rtranclp_induct[where r=jctc4.justifies_config_subset, where ?a=C])
