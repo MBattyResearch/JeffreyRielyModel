@@ -120,7 +120,6 @@ lemma blocking_config_valid : "blocking_config \<in> jctc4.config_domain"
   apply(auto)
 done
 
-
 lemma "jctc4.ae_justifies_subset {} C \<Longrightarrow> \<not>(jctc4_goal_events \<subseteq> C)"
     apply(simp add: jctc4.ae_justifies_subset_def jctc4.ae_justifies_def)
     apply(frule bspec[where A=jctc4.config_domain, where x="blocking_config"])
@@ -130,7 +129,6 @@ lemma "jctc4.ae_justifies_subset {} C \<Longrightarrow> \<not>(jctc4_goal_events
     (*apply()
     apply(simp add: blocking_just_self_only)*)
     
-
 lemma crux : "jctc4.ae_justifies_subset x y \<Longrightarrow> (\<forall>e\<in>jctc4_goal_events. e \<notin> x) \<Longrightarrow> (\<forall>e\<in>jctc4_goal_events. e \<notin> y)"
     apply(simp add: jctc4.ae_justifies_subset_def jctc4.ae_justifies_def)
     apply(clarsimp)

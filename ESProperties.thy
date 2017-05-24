@@ -104,6 +104,31 @@ begin
   lemma game_splitR: "A \<sqsubseteq> B \<Longrightarrow> B \<sqsubseteq>\<^sup>* C \<Longrightarrow> A \<sqsubseteq>\<^sup>* C"
     apply(simp add: ae_justifies_subset_star_def)
     done
+   
+thm rtranclp_induct[where r="ae_justifies_subset_def"]
+ 
+  lemma rounds_implies_subset: "A \<sqsubseteq>\<^sup>* B \<Longrightarrow> A \<subseteq> B"
+    apply(simp add: ae_justifies_subset_star_def)
+    apply(rule rtranclp_induct[where r="ae_justifies_subset", where a=A])
+    apply(auto)
+    apply(simp add: ae_justifies_subset_def)
+    by auto
+
+  lemma round_implies_subset: "A \<sqsubseteq> B \<Longrightarrow> A \<subseteq> B"
+    apply(simp add: ae_justifies_subset_def)
+    done
+
+  lemma rounds_finite: "\<lbrakk>{} \<sqsubseteq>\<^sup>* C; (ae_justifies_subset^^n) {} C\<rbrakk> \<Longrightarrow> n \<in> \<nat>"
+    oops
+
+  lemma rounds_bounded_by_events: "\<lbrakk>{} \<sqsubseteq>\<^sup>* C; (ae_justifies_subset^^n) {} C\<rbrakk> \<Longrightarrow> n-1 \<le> card C"
+    apply(rule rtranclp_induct[where r="ae_justifies_subset", where a=C])
+    apply(auto)
+    sledgehammer
+    apply(unfold compower_def)
+    
+    
+    
 
 end
 end

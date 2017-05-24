@@ -77,8 +77,8 @@ context labelledES
     definition up_closed ::"event config \<Rightarrow> bool" where
       "up_closed C \<equiv> \<forall>x y . x \<in> C \<and> x \<preceq> y \<longrightarrow> y \<in> C"
 
-    definition is_maximal :: "event set \<Rightarrow> event config \<Rightarrow> bool" where
-      "is_maximal event_set C \<equiv> \<forall>e\<in>C. \<exists>e'\<in>event_set. e'\<notin>C \<longrightarrow>  conf e e'"
+    definition is_maximal :: "event config \<Rightarrow> bool" where
+      "is_maximal C \<equiv> \<forall>e\<in>events. e\<notin>C \<longrightarrow> (\<exists>e'\<in>C. conf e e')"
 
     definition is_read :: "event \<Rightarrow> bool" where
       "is_read x \<equiv> (getMemAction (label x) = R)"
